@@ -7,6 +7,12 @@
     "light": "#7367f0",
     "dark": "#7367f0"
   },
+  "branding": {
+    "colors": {
+      "primary": "#4CAF50",
+      "accent": "#FFC107"
+    }
+  },
   "favicon": "/favicon.svg",
   "navigation": {
     "tabs": [
