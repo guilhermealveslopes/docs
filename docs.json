@@ -66,6 +66,21 @@
             ]
           }
         ]
+      },
+        {
+        "tab": "Oportunidades",
+        "groups": [
+          {
+            "group": "Introdução",
+            "pages": [
+              "api-reference/opportunities/introduction"
+            ]
+          },
+          {
+            "group": "API",
+            "openapi": "api-reference/opportunities/docs.yaml"
+          }
+        ]
       }
     ],
     "global": {
