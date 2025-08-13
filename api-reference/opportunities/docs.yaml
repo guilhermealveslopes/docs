@@ -145,6 +145,10 @@ components:
     OpportunityRequest:
       type: object
       properties:
+        source:
+          type: string
+          example: "primeira"
+          description: "Origem da oportunidade"
         external_id:
           type: string
           example: "abc123"
@@ -160,7 +164,9 @@ components:
           items:
             $ref: '#/components/schemas/Field'
       required:
+        - source
         - customer
+        - fields
       xml:
         name: opportunityRequest
     Opportunity:
