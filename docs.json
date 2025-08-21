@@ -16,8 +16,8 @@
           {
             "group": "Introdução",
             "pages": [
-              "api-reference/opportunities/introduction",
-              "api-reference/opportunities/sources"
+              "api/oportunidades/introducao",
+              "api/oportunidades/origem"
             ]
           },
           {
