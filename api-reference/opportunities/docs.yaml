@@ -11,6 +11,8 @@ servers:
 tags:
   - name: Oportunidades
     description: Operações com oportunidades
+  - name: Origens de Oportunidades
+    description: Operações com origens de oportunidades
 paths:
   /opportunity:
     post:
@@ -70,15 +72,9 @@ paths:
             type: integer
             format: int64
       requestBody:
-        description: Dados para atualizar a oportunidade
+        description: Atualiza oportunidade existente
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/OpportunityRequest'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/OpportunityRequest'
-          application/x-www-form-urlencoded:
             schema:
               $ref: '#/components/schemas/OpportunityRequest'
         required: true
@@ -89,13 +85,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OpportunityResponse'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/OpportunityResponse'
-        '400':
-          description: Invalid input
         '404':
-          description: Opportunity not found
+          description: Oportunidade não encontrada
         '422':
           description: Validation exception
         default:
@@ -110,7 +101,7 @@ paths:
       tags:
         - Oportunidades
       summary: Exclusão de oportunidade
-      description: Remove uma oportunidade existente
+      description: Remove uma oportunidade
       operationId: deleteOpportunity
       parameters:
         - name: id
@@ -126,12 +117,99 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DeleteResponse'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/DeleteResponse'
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Oportunidade deletada com sucesso"
         '404':
-          description: Opportunity not found
+          description: Oportunidade não encontrada
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth: []
+  /opportunity-source:
+    get:
+      tags:
+        - Origens de Oportunidades
+      summary: Listagem de origens de oportunidades
+      description: Lista todas as origens de oportunidades disponíveis
+      operationId: listOpportunitySources
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Origens listadas com sucesso"
+                  sources:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OpportunitySource'
+        '422':
+          description: Error listing sources
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Erro ao listar origens"
+                  error:
+                    type: string
+                    example: "sources_not_found"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      security:
+        - bearerAuth: []
+    post:
+      tags:
+        - Origens de Oportunidades
+      summary: Criação de origem de oportunidade
+      description: Adiciona nova origem de oportunidade
+      operationId: createOpportunitySource
+      requestBody:
+        description: Adiciona nova origem de oportunidade
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpportunitySourceRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpportunitySourceResponse'
+        '422':
+          description: Validation exception or source already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  msg:
+                    type: string
+                    example: "Já existe uma origem com este nome"
+                  error:
+                    type: string
+                    example: "source_already_exists"
+                  source:
+                    $ref: '#/components/schemas/OpportunitySource'
         default:
           description: Unexpected error
           content:
@@ -148,7 +226,7 @@ components:
         source:
           type: string
           example: "primeira"
-          description: "Origem da oportunidade"
+          description: "Fonte da oportunidade"
         external_id:
           type: string
           example: "abc123"
@@ -233,24 +311,62 @@ components:
           $ref: '#/components/schemas/Opportunity'
       xml:
         name: opportunityResponse
-    Error:
+    OpportunitySourceRequest:
       type: object
       properties:
-        code:
+        name:
           type: string
-        message:
+          example: "Website"
+          description: "Nome da origem"
+        description:
           type: string
+          example: "Oportunidades vindas do website"
+          nullable: true
+          description: "Descrição da origem"
       required:
-        - code
-        - message
-    DeleteResponse:
+        - name
+      xml:
+        name: opportunitySourceRequest
+    OpportunitySource:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Website"
+        slug:
+          type: string
+          example: "website"
+        description:
+          type: string
+          example: "Oportunidades vindas do website"
+          nullable: true
+      xml:
+        name: opportunitySource
+    OpportunitySourceResponse:
       type: object
       properties:
         msg:
           type: string
-          example: "Oportunidade excluída com sucesso"
+          example: "Origem criada com sucesso"
+        source:
+          $ref: '#/components/schemas/OpportunitySource'
       xml:
-        name: deleteResponse
+        name: opportunitySourceResponse
+    Error:
+      type: object
+      properties:
+        msg:
+          type: string
+          example: "Erro interno no servidor"
+        error:
+          type: string
+          example: "Internal Server Error"
+      xml:
+        name: error
   securitySchemes:
     bearerAuth:
       type: http
