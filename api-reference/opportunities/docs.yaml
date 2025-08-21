@@ -148,7 +148,7 @@ components:
         source:
           type: string
           example: "primeira"
-          description: "Fonte da oportunidade"
+          description: "Origem da oportunidade"
         external_id:
           type: string
           example: "abc123"
