@@ -1,11 +1,14 @@
 openapi: 3.0.1
 info:
-  title: Integração Fretatech
+  title: Integração Fretatech - Lado do parceiro
   description: |
     <p>Esse documento descreve uma base de como o ERP parceiro precisa se comportar, criando os devidos endpoins para que a Fretatech consiga acessar as informações necessárias.<br>Estes endpoints é como a Fretatech espera que seja o ambiente <strong>do lado do ERP parceiro</strong>.</p>
+
+    <p>Para visitar a documentação do lado da fretatech, visite <a href="/">este link.</a></p>
   version: 1.0.0
 servers:
-  - url: https://fretatech.com.br/api
+  - url: /
+
 paths:
   "/api/cliente/consultar":
     get:
@@ -13,93 +16,79 @@ paths:
         - Cliente
       summary: Consultar cliente por e-mail
       operationId: Cliente_ConsultarCodigoClientePorEmail
-      consumes: []
-      produces:
-        - application/json
-        - text/json
-        - application/xml
-        - text/xml
       parameters:
         - name: value
           in: query
-          description: ""
+          description: E-mail do cliente
           required: true
-          type: string
+          schema:
+            type: string
       responses:
         "200":
           description: Consulta realizada com sucesso
-          schema:
-            type: string
+          content:
+            application/json:
+              schema:
+                type: string
         "204":
           description: Cliente não encontrado
         "400":
           description: Requisição inválida
         "500":
           description: Não foi possível processar a solicitação
+
   "/api/cotacao/incluir":
     post:
       tags:
         - Cotacao
       summary: Inserir cotação
       operationId: Cotacao_InserirCotacaoExterna
-      consumes:
-        - application/json
-        - text/json
-        - application/xml
-        - text/xml
-        - application/x-www-form-urlencoded
-      produces:
-        - application/json
-        - text/json
-        - application/xml
-        - text/xml
-      parameters:
-        - name: value
-          in: body
-          description: ""
-          required: true
-          schema:
-            "$ref": "#/definitions/Cotacao"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cotacao"
       responses:
         "200":
           description: Cotação inserida com sucesso
-          schema:
-            "$ref": "#/definitions/RetornoCotacaoVO"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetornoCotacaoVO"
         "400":
           description: Requisição inválida
         "500":
           description: Não foi possível inserir a cotação
+
   "/api/disponibilidade/consulta":
     get:
       tags:
         - Disponibilidade
       summary: Consulta disponbilidade de frota
       operationId: Disponibilidade_ConsultarDisponibilidade
-      consumes: []
-      produces:
-        - application/json
-        - text/json
-        - application/xml
-        - text/xml
       parameters:
         - name: agencia
           in: query
-          description: ""
+          description: Código da agência
           required: true
-          type: integer
-          format: int32
+          schema:
+            type: integer
+            format: int32
         - name: inicioViagem
           in: query
-          description: ""
+          description: Data de início da viagem
           required: true
-          type: string
-          format: date-time
+          schema:
+            type: string
+            format: date-time
         - name: terminoViagem
           in: query
-          description: ""
+          description: Data de término da viagem
           required: true
-          type: string
-          format: date-time
+          schema:
+            type: string
+            format: date-time
       responses:
         "200":
           description: Executado com sucesso, retorna as frotas disponíveis dentro do período informado
@@ -109,256 +98,252 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/FleetAvailabilityModel"
-            text/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/FleetAvailabilityModel"
         "404":
           description: Nenhuma disponibilidade encontrada
         "500":
           description: Não foi possível realizar a consulta
+
   "/api/pagamento/gravar":
     post:
       tags:
         - Pagamento
       summary: Grava parcelas do pedido
       operationId: Pagamento_Gravar
-      consumes:
-        - application/json
-        - text/json
-        - application/xml
-        - text/xml
-        - application/x-www-form-urlencoded
-      produces:
-        - application/json
-        - text/json
-        - application/xml
-        - text/xml
-      parameters:
-        - name: pagamento
-          in: body
-          description: ""
-          required: true
-          schema:
-            "$ref": "#/definitions/PagamentoVO"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PagamentoVO"
       responses:
         "200":
           description: Executado com sucesso
-          schema:
-            "$ref": "#/definitions/RetornoCotacaoVO"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetornoCotacaoVO"
         "500":
           description: Não foi possível realizar a consulta
-definitions:
-  Cotacao:
-    description: ""
-    required:
-      - itens
-    type: object
-    properties:
-      itens:
-        description: Itens da cotação
-        type: array
-        items:
-          "$ref": "#/definitions/ItemDaCotacaoVO"
-      agencia:
-        format: int32
-        type: integer
-      cliente:
-        "$ref": "#/definitions/ClienteEsporadicoVO"
-      usuario:
-        type: string
-      validade:
-        format: date-time
-        type: string
-      observacao:
-        type: string
-      finalizada:
-        type: boolean
-      forma_pagamento:
-        type: string
-      cotacao_origem:
-        type: array
-        items:
-          type: string
-      vendedor:
-        type: string
-      parcelas:
-        type: array
-        items:
-          "$ref": "#/definitions/ParcelamentoVO"
-  ItemDaCotacaoVO:
-    type: object
-    properties:
-      agrupamento:
-        format: int32
-        type: integer
-      origem:
-        type: string
-      destino:
-        type: string
-      ida:
-        "$ref": "#/definitions/ViagemDoItemDaCotacaoVO"
-      volta:
-        "$ref": "#/definitions/ViagemDoItemDaCotacaoVO"
-      valor:
-        format: double
-        type: number
-      itinerario:
-        type: array
-        items:
-          type: string
-      distancia:
-        format: double
-        type: number
-      km_adicional:
-        format: int32
-        type: integer
-      detalhe_partida:
-        "$ref": "#/definitions/DetalheDaViagemVO"
-      detalhe_destino:
-        "$ref": "#/definitions/DetalheDaViagemVO"
-  ClienteEsporadicoVO:
-    type: object
-    properties:
-      nome:
-        type: string
-      email:
-        type: string
-      documento:
-        type: string
-      codigo_federal:
-        type: string
-      cep:
-        type: string
-      bairro:
-        type: string
-      endereco:
-        type: string
-      numero:
-        type: string
-      complemento:
-        type: string
-      telefone:
-        type: string
-      codigo_externo:
-        type: string
-  ParcelamentoVO:
-    required:
-      - codigo_externo
-      - valor
-      - numero_parcela
-      - status
-    type: object
-    properties:
-      codigo_externo:
-        type: string
-      valor:
-        format: double
-        type: number
-      numero_parcela:
-        format: int32
-        type: integer
-      status:
-        type: string
-      data_vencimento:
-        format: date-time
-        type: string
-      data_pagamento:
-        format: date-time
-        type: string
-      id_boleto:
-        type: string
-  ViagemDoItemDaCotacaoVO:
-    type: object
-    properties:
-      inicio:
-        format: date-time
-        type: string
-      fim:
-        format: date-time
-        type: string
-  DetalheDaViagemVO:
-    type: object
-    properties:
-      bairro:
-        maxLength: 40
-        minLength: 0
-        type: string
-      cidade:
-        maxLength: 40
-        minLength: 0
-        type: string
-      local:
-        maxLength: 40
-        minLength: 0
-        type: string
-      localizacao:
-        maxLength: 80
-        minLength: 0
-        type: string
-      observacao:
-        maxLength: 100
-        minLength: 0
-        type: string
-  RetornoCotacaoVO:
-    type: object
-    properties:
-      guid:
-        type: string
-      data_hora:
-        format: date-time
-        type: string
-      status:
-        type: string
-      mensagens:
-        type: array
-        items:
-          type: string
-  DisponibilidadeDeFrotaVO:
-    type: object
-    properties:
-      idModelo:
-        format: int32
-        type: integer
-      descricao:
-        type: string
-      quantidade:
-        format: int32
-        type: integer
-      caracteristica:
-        type: string
-      capacidade:
-        format: int32
-        type: integer
-      toalete:
-        type: boolean
-      arCondicionado:
-        type: boolean
-      tipo:
-        type: string
-      idCaracteristica:
-        type: string
-      idTipo:
-        format: int32
-        type: integer
-  PagamentoVO:
-    type: object
-    properties:
-      guid:
-        type: string
-      parcelas:
-        type: array
-        items:
-          "$ref": "#/definitions/ParcelamentoVO"
-securityDefinitions:
-  apiKey:
-    type: apiKey
-    description: Api key para autenticação
-    name: api-key
-    in: header
+
 components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      description: Api key para autenticação
+      name: api-key
+      in: header
+
   schemas:
+    Cotacao:
+      description: ""
+      required:
+        - itens
+      type: object
+      properties:
+        itens:
+          description: Itens da cotação
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemDaCotacaoVO"
+        agencia:
+          format: int32
+          type: integer
+        cliente:
+          $ref: "#/components/schemas/ClienteEsporadicoVO"
+        usuario:
+          type: string
+        validade:
+          format: date-time
+          type: string
+        observacao:
+          type: string
+        finalizada:
+          type: boolean
+        forma_pagamento:
+          type: string
+        cotacao_origem:
+          type: array
+          items:
+            type: string
+        vendedor:
+          type: string
+        parcelas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParcelamentoVO"
+
+    ItemDaCotacaoVO:
+      type: object
+      properties:
+        agrupamento:
+          format: int32
+          type: integer
+        origem:
+          type: string
+        destino:
+          type: string
+        ida:
+          $ref: "#/components/schemas/ViagemDoItemDaCotacaoVO"
+        volta:
+          $ref: "#/components/schemas/ViagemDoItemDaCotacaoVO"
+        valor:
+          format: double
+          type: number
+        itinerario:
+          type: array
+          items:
+            type: string
+        distancia:
+          format: double
+          type: number
+        km_adicional:
+          format: int32
+          type: integer
+        detalhe_partida:
+          $ref: "#/components/schemas/DetalheDaViagemVO"
+        detalhe_destino:
+          $ref: "#/components/schemas/DetalheDaViagemVO"
+
+    ClienteEsporadicoVO:
+      type: object
+      properties:
+        nome:
+          type: string
+        email:
+          type: string
+        documento:
+          type: string
+        codigo_federal:
+          type: string
+        cep:
+          type: string
+        bairro:
+          type: string
+        endereco:
+          type: string
+        numero:
+          type: string
+        complemento:
+          type: string
+        telefone:
+          type: string
+        codigo_externo:
+          type: string
+
+    ParcelamentoVO:
+      required:
+        - codigo_externo
+        - valor
+        - numero_parcela
+        - status
+      type: object
+      properties:
+        codigo_externo:
+          type: string
+        valor:
+          format: double
+          type: number
+        numero_parcela:
+          format: int32
+          type: integer
+        status:
+          type: string
+        data_vencimento:
+          format: date-time
+          type: string
+        data_pagamento:
+          format: date-time
+          type: string
+        id_boleto:
+          type: string
+
+    ViagemDoItemDaCotacaoVO:
+      type: object
+      properties:
+        inicio:
+          format: date-time
+          type: string
+        fim:
+          format: date-time
+          type: string
+
+    DetalheDaViagemVO:
+      type: object
+      properties:
+        bairro:
+          maxLength: 40
+          minLength: 0
+          type: string
+        cidade:
+          maxLength: 40
+          minLength: 0
+          type: string
+        local:
+          maxLength: 40
+          minLength: 0
+          type: string
+        localizacao:
+          maxLength: 80
+          minLength: 0
+          type: string
+        observacao:
+          maxLength: 100
+          minLength: 0
+          type: string
+
+    RetornoCotacaoVO:
+      type: object
+      properties:
+        guid:
+          type: string
+        data_hora:
+          format: date-time
+          type: string
+        status:
+          type: string
+        mensagens:
+          type: array
+          items:
+            type: string
+
+    DisponibilidadeDeFrotaVO:
+      type: object
+      properties:
+        idModelo:
+          format: int32
+          type: integer
+        descricao:
+          type: string
+        quantidade:
+          format: int32
+          type: integer
+        caracteristica:
+          type: string
+        capacidade:
+          format: int32
+          type: integer
+        toalete:
+          type: boolean
+        arCondicionado:
+          type: boolean
+        tipo:
+          type: string
+        idCaracteristica:
+          type: string
+        idTipo:
+          format: int32
+          type: integer
+
+    PagamentoVO:
+      type: object
+      properties:
+        guid:
+          type: string
+        parcelas:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParcelamentoVO"
+
     FleetAvailabilityModel:
       type: object
       properties:
