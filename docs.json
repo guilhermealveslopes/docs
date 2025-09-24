@@ -22,7 +22,8 @@
           },
           {
             "group": "API",
-            "openapi": "api/oportunidades/docs.yaml"
+            "directory": "api",
+            "openapi": "oportunidades/docs.yaml"
           }
         ]
       },
@@ -37,7 +38,8 @@
           },
           {
             "group": "API",
-            "openapi": "api/integracao/docs.yaml"
+            "directory": "api",
+            "openapi": "integracao/docs.yaml"
           }
         ]
       }
