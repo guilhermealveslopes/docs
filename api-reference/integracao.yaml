@@ -7,9 +7,7 @@ info:
      <p>Para visitar a documentação do lado da fretatech, visite <a href="/">este link.</a></p>
   version: 1.0.0
 servers:
-  - url: /
-schemes:
-  - http
+  - url: https://fretatech.com.br/api
 paths:
   "/api/cliente/consultar":
     get:
