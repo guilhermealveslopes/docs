@@ -35,9 +35,8 @@
                             "api/integracao/introducao"
                         ]
                     },
-                  {
+                    {
                         "group": "API de integração",
-                        "directory": "api-reference", 
                         "openapi": "api-reference/integracao.yaml"
                     }
                 ]

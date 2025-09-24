@@ -3,8 +3,6 @@ info:
   title: Integração Fretatech
   description: |
     <p>Esse documento descreve uma base de como o ERP parceiro precisa se comportar, criando os devidos endpoins para que a Fretatech consiga acessar as informações necessárias.<br>Estes endpoints é como a Fretatech espera que seja o ambiente <strong>do lado do ERP parceiro</strong>.</p>
-
-     <p>Para visitar a documentação do lado da fretatech, visite <a href="/">este link.</a></p>
   version: 1.0.0
 servers:
   - url: https://fretatech.com.br/api
