@@ -16,13 +16,13 @@
           {
             "group": "Introdução",
             "pages": [
-              "api/oportunidades/introducao",
-              "api/oportunidades/origem"
+              "api-reference/oportunidades/introducao",
+              "api-reference/oportunidades/origem"
             ]
           },
           {
             "group": "API",
-            "openapi": "/api/oportunidades/docs.yaml"
+            "openapi": "api-reference/oportunidades/docs.yaml"
           }
         ]
       },
@@ -32,12 +32,12 @@
           {
             "group": "Introdução",
             "pages": [
-              "api/integracao/introducao"
+              "api-reference/integracao/introducao"
             ]
           },
           {
             "group": "API",
-            "openapi": "/api/integracao/docs.yaml"
+            "openapi": "api-reference/integracao/docs.yaml"
           }
         ]
       }
