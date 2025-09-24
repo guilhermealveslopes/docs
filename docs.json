@@ -25,6 +25,21 @@
             "openapi": "api-reference/opportunities/docs.yaml"
           }
         ]
+      },
+      {
+        "tab": "Integração",
+        "groups": [
+          {
+            "group": "Introdução",
+            "pages": [
+              "api/integracao/introducao"
+            ]
+          },
+          {
+            "group": "API",
+            "openapi": "api-reference/integration/docs.yaml"
+          }
+        ]
       }
     ],
     "global": {
