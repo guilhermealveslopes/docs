@@ -40,6 +40,16 @@
                         "openapi": "api-reference/integracao.yaml"
                     }
                 ]
+            },{
+                "tab": "Migração",
+                "groups": [
+                    {
+                        "group": "Introdução",
+                        "pages": [
+                            "api/migration/index"
+                        ]
+                    }
+                ]
             }
         ],
         "global": {}

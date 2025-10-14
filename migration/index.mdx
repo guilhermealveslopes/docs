@@ -1,0 +1,108 @@
+---
+title: "Alteração de DNS"
+description: "Alteração necessária para funcionamento do sistema da Fretatech"
+---
+
+Para continuar, você precisa ter recebido um ip do nosso time de suporte, esse IP, será representado neste tutorial como `IP_FORNECIDO`.
+
+Este guia explica como atualizar os registros DNS do seu domínio, alterando de registros CNAME que apontam para `web01-fretatech.hostmundi.com` para registros A que apontam para o IP `IP_FORNECIDO` . O processo é similar na maioria dos provedores de DNS (como Cloudflare, Locaweb, [Registro.br](http://Registro.br), etc.), mas as interfaces podem variar ligeiramente. Siga os passos gerais abaixo e consulte a documentação do seu provedor se necessário.
+
+### Por que fazer essa migração?
+
+Atualmente, seus subdomínios (como `www.turismo` ou `turismo`) usam CNAME para redirecionar para nossa infraestrutura antiga. Ao mudar para novo IP, você aponta diretamente para o endereço do nosso novo servidor, o que garantirá seu sistema atualizado.
+
+### Passos Gerais para Alterar o DNS
+
+1. **Acesse o Painel do Seu Provedor de DNS**  
+
+   - Vá ao site do seu provedor (ex.: [[cloudflare.com](http://cloudflare.com)](https://cloudflare.com), [[locaweb.com.br](http://locaweb.com.br)](https://locaweb.com.br), [[registro.br](http://registro.br)](https://registro.br)).  
+
+   - Faça login na sua conta.  
+
+   - Procure pela seção de gerenciamento de domínios ou DNS (geralmente chamada de "DNS Zone", "Gerenciar DNS" ou "Editor de Zona").
+
+2. **Localize os Registros Existentes**  
+
+   - Selecione o domínio que precisa alterar.  
+
+   - Na lista de registros DNS, identifique os registros do tipo CNAME que apontam para `web01-fretatech.hostmundi.com`.  
+
+   - Exemplos comuns:  
+
+     - Nome: `www.turismo` ou `turismo` , `reservas` , `locacao` , `orcamentos`
+
+     - Tipo: CNAME  
+
+     - Conteúdo: `web01-fretatech.hostmundi.com`  
+
+<Check>
+  Veja a ilustração abaixo para um exemplo de como os registros podem aparecer
+</Check>
+
+    O exemplo abaixo considera que você está utilizando www também.
+
+![Table Pn](/images/Table.png)
+
+3. **Exclua ou Edite os Registros CNAME**  
+
+   - Selecione o registro CNAME relevante.  
+
+   - Clique em "Excluir" ou "Remover" para deletá-lo. (Se preferir editar, mude o tipo para A no próximo passo.)  
+
+   - Confirme a exclusão. Atenção: Isso pode causar downtime temporário no site até a propagação do novo registro.
+
+4. **Adicione Novos Registros do Tipo A**  
+
+   - Clique em "Adicionar Registro" ou "Novo Registro".  
+
+   - Preencha os campos:  
+
+     - **Tipo**: A  
+
+     - **Nome**: O mesmo do CNAME anterior (ex.: `www.turismo` ou `turismo`). Se for o domínio raiz, use `@` ou deixe em branco.  
+
+     - **Conteúdo/Valor**: `IP_FORNECIDO`  
+
+     - **TTL**: Deixe como "Auto" ou o valor padrão (ex.: 300 ou 3600 segundos).  
+
+     - **Proxy/Outros**: Desative proxy se aplicável (ex.: no Cloudflare, desmarque o ícone de nuvem laranja para "DNS Only").  
+
+   - Salve o novo registro.
+
+<Check>
+  Veja como o resultado final deve ficar no seu provedor de DNS
+</Check>
+
+O exemplo abaixo considera que você está utilizando www também.
+
+![Table(1) Jp](/Table\(2\).jpg)
+
+5. **Verifique e Aguarde a Propagação**  
+
+   - Após salvar, verifique os registros na lista para confirmar que o novo A está ativo.  
+
+   - A propagação do DNS pode levar de minutos a 48 horas. Use ferramentas como [DNS Checker - DNS Check Propagation Tool](https://dnschecker.org/) para checar se o IP `IP_FORNECIDO`  está resolvendo globalmente.  
+
+   - Teste o acesso ao site/subdomínio após alguns minutos.
+
+### Dicas por Provedor
+
+- **Cloudflare**: No dashboard, vá para DNS \> Adicionar registro. Desative o proxy (nuvem cinza) para evitar interferências.
+
+- **Locaweb**: No painel de hospedagem, acesse "Domínios" \> "Gerenciar DNS".
+
+- [**Registro.br**](http://Registro.br): No portal, selecione o domínio \> "Editar Zona DNS".
+
+- Se você encontrar dificuldades, busque no suporte do provedor por "como alterar zona DNS".
+
+### Avisos Importantes
+
+- **Downtime**: Durante a migração, o site pode ficar indisponível temporariamente. Planeje para horários de baixo tráfego.
+
+- **Outros Registros**: Não altere registros não relacionados (ex.: MX para e-mails) a menos que instruído.
+
+- **Segurança**: Certifique-se de que o novo IP está configurado corretamente no servidor de destino.
+
+- Se precisar de ajuda personalizada, entre em contato com o suporte técnico.
+
+Se os passos não se aplicarem exatamente ao seu provedor, capture uma screenshot da sua interface e envie para análise.
