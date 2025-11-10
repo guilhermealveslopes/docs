@@ -1,11 +1,11 @@
 ---
-title: Routing
-description: Calcular rotas completas entre pontos com waypoints opcionais
+title: "Routing"
+description: "Calcular rotas completas entre pontos com waypoints opcionais"
 ---
 
-# Routing
+# Visão geral
 
-O endpoint de routing calcula rotas completas entre um ponto de origem e um destino, com suporte a waypoints (pontos intermediários). Retorna distâncias e durações totais, além de informações sobre cada segmento da rota.
+Calcula rotas completas entre um ponto de origem e um destino, com suporte a waypoints (pontos intermediários). Retorna distâncias e durações totais, além de informações sobre cada segmento da rota.
 
 ## Endpoint
 
@@ -31,13 +31,13 @@ POST /maps/directions
 
 ## Parâmetros do Body
 
-| Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `origin` | string | Sim | Coordenadas de origem no formato `lat,lng` |
-| `destination` | string | Sim | Coordenadas de destino no formato `lat,lng` |
-| `waypoints` | array | Não | Array de coordenadas intermediárias no formato `["lat,lng", ...]` |
-| `force_refresh` | boolean | Não | Se `true`, força busca na API ignorando cache (padrão: `false`) |
-| `provider` | string | Não | Força uso de um provedor específico: `"google"` ou `"here"` |
+| Parâmetro       | Tipo    | Obrigatório | Descrição                                                         |
+| --------------- | ------- | ----------- | ----------------------------------------------------------------- |
+| `origin`        | string  | Sim         | Coordenadas de origem no formato `lat,lng`                        |
+| `destination`   | string  | Sim         | Coordenadas de destino no formato `lat,lng`                       |
+| `waypoints`     | array   | Não         | Array de coordenadas intermediárias no formato `["lat,lng", ...]` |
+| `force_refresh` | boolean | Não         | Se `true`, força busca na API ignorando cache (padrão: `false`)   |
+| `provider`      | string  | Não         | Força uso de um provedor específico: `"google"` ou `"here"`       |
 
 ## Exemplo de Requisição
 

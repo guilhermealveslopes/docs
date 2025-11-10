@@ -1,11 +1,11 @@
 ---
-title: Distance Matrix
-description: Calcular distâncias e tempos de viagem entre múltiplos pontos
+title: "Distance Matrix"
+description: "Calcular distâncias e tempos de viagem entre múltiplos pontos"
 ---
 
-# Distance Matrix
+# Visão geral
 
-O endpoint de distance matrix calcula distâncias e tempos de viagem entre múltiplos pontos de origem e destino. É útil para otimização de rotas e cálculo de custos de frete.
+Calcula distâncias e tempos de viagem entre múltiplos pontos de origem e destino. É útil para otimização de rotas e cálculo de custos de frete.
 
 ## Endpoint
 
@@ -16,10 +16,10 @@ GET /maps/distance-matrix
 
 ## Parâmetros de Query
 
-| Parâmetro | Tipo | Obrigatório | Descrição |
-|-----------|------|-------------|-----------|
-| `origins` | string | Sim | Coordenadas de origem no formato `lat,lng` ou múltiplas separadas por `\|` |
-| `destinations` | string | Sim | Coordenadas de destino no formato `lat,lng` ou múltiplas separadas por `\|` |
+| Parâmetro      | Tipo   | Obrigatório | Descrição                                                                  |
+| -------------- | ------ | ----------- | -------------------------------------------------------------------------- |
+| `origins`      | string | Sim         | Coordenadas de origem no formato `lat,lng` ou múltiplas separadas por `|`  |
+| `destinations` | string | Sim         | Coordenadas de destino no formato `lat,lng` ou múltiplas separadas por `|` |
 
 ## Formato de Coordenadas
 
