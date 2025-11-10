@@ -1,0 +1,68 @@
+---
+title: "Autenticação"
+description: "Como autenticar requisições na API FretaMaps"
+---
+
+# Autenticação
+
+A API FretaMaps utiliza autenticação via API Key. Todas as requisições (exceto `/health-check`) requerem autenticação.
+
+## Métodos de Autenticação
+
+Você pode autenticar suas requisições usando um dos seguintes métodos:
+
+### 1. Header X-API-Key (Recomendado)
+
+\`\`\`bash
+
+curl -H "X-API-Key: sua_chave_aqui" \\
+
+  https://api.fretamaps.com.br/api/places/autocomplete?input=São Paulo
+
+\`\`\`
+
+### 2. Header Authorization (Token simples)
+
+\`\`\`bash
+
+curl -H "Authorization: sua_chave_aqui" \\
+
+  https://api.fretamaps.com.br/api/places/autocomplete?input=São Paulo
+
+\`\`\`
+
+### 3. Header Authorization (Bearer Token)
+
+\`\`\`bash
+
+curl -H "Authorization: Bearer sua_chave_aqui" \\
+
+  https://api.fretamaps.com.br/api/places/autocomplete?input=São Paulo
+
+\`\`\`
+
+## Obter uma API Key
+
+Para obter uma chave de API, entre em contato com a equipe da FretaTech através do email `support@fretatech.com.br`.
+
+## Endpoints Públicos
+
+Os seguintes endpoints não requerem autenticação:
+
+- `GET /health-check` - Verifica o status do servidor
+
+## Erros de Autenticação
+
+Se a autenticação falhar, você receberá uma resposta `401 Unauthorized`:
+
+\`\`\`json
+
+{
+
+  "error": "Unauthorized",
+
+  "message": "API key inválida ou não fornecida"
+
+}
+
+\`\`\`

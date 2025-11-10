@@ -1,0 +1,60 @@
+---
+title: "Introdução"
+description: "Visão geral da API FretaMaps"
+---
+
+# FretaMaps API
+
+A **FretaMaps API** é uma API de geolocalização unificada que fornece acesso a serviços de mapas através de múltiplos provedores (Google Maps e HERE Maps), com sistema de cache inteligente para otimizar custos e performance.
+
+## Características Principais
+
+- **Multi-provedor**: Suporte para Google Maps e HERE Maps
+
+- **Cache inteligente**: Sistema de cache MongoDB para reduzir chamadas à API
+
+- **Formato padronizado**: Respostas unificadas independente do provedor
+
+- **Autenticação**: Sistema de autenticação via API Key
+
+- **Logging**: Sistema completo de logs e estatísticas
+
+## Base URL
+
+\`\`\`
+
+https://api.fretamaps.com.br
+
+\`\`\`
+
+## Formato de Resposta
+
+Todas as respostas são retornadas em formato JSON com codificação UTF-8.
+
+## Códigos de Status HTTP
+
+A API utiliza os seguintes códigos de status HTTP:
+
+- `200 OK` - Requisição bem-sucedida
+
+- `400 Bad Request` - Parâmetros inválidos ou faltando
+
+- `401 Unauthorized` - Autenticação falhou ou não fornecida
+
+- `404 Not Found` - Recurso não encontrado
+
+- `500 Internal Server Error` - Erro interno do servidor
+
+## Headers de Resposta
+
+A API retorna headers informativos em todas as respostas:
+
+- `X-Cache`: Indica se a resposta veio do cache `HIT`) ou da API `MISS`)
+
+- `X-Provider`: Indica qual provedor foi usado `Google` ou `Here`)
+
+- `X-Format`: Sempre retorna `Standard` para indicar formato padronizado
+
+## Rate Limiting
+
+A API implementa rate limiting baseado na sua chave de API. Consulte o header `X-RateLimit-Remaining` nas respostas para verificar quantas requisições restam.
