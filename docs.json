@@ -14,14 +14,24 @@
               "tab": "Fretamaps",
               "groups": [
                   {
-                      "group": "FretaMaps API",
+                      "group": "Visão Geral",
                       "pages": [
                           "fretamaps/introduction/getting-started",
-                          "fretamaps/introduction/authentication",
+                          "fretamaps/introduction/authentication"
+                      ]
+                  },
+                  {
+                      "group": "API",
+                      "pages": [
                           "fretamaps/api-reference/autocomplete",
                           "fretamaps/api-reference/place-details",
                           "fretamaps/api-reference/distance-matrix",
-                          "fretamaps/api-reference/routing",
+                          "fretamaps/api-reference/routing"
+                      ]
+                  },
+                  {
+                      "group": "Estruturas de Dados",
+                      "pages": [
                           "fretamaps/data-structures/overview",
                           "fretamaps/data-structures/autocomplete",
                           "fretamaps/data-structures/place-details",
