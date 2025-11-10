@@ -16,8 +16,7 @@
                   {
                       "group": "Visão Geral",
                       "pages": [
-                          "fretamaps/introduction/getting-started",
-                          "fretamaps/introduction/authentication"
+                          "fretamaps/introduction/getting-started"
                       ]
                   },
                   {
