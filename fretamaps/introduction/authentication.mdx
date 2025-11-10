@@ -1,6 +1,6 @@
 ---
-title: "Autenticação"
-description: "Como autenticar requisições na API FretaMaps"
+title: Autenticação
+description: Como autenticar requisições na API FretaMaps
 ---
 
 # Autenticação
@@ -13,33 +13,24 @@ Você pode autenticar suas requisições usando um dos seguintes métodos:
 
 ### 1. Header X-API-Key (Recomendado)
 
-\`\`\`bash
-
-curl -H "X-API-Key: sua_chave_aqui" \\
-
+```bash
+curl -H "X-API-Key: sua_chave_aqui" \
   https://api.fretamaps.com.br/api/places/autocomplete?input=São Paulo
-
-\`\`\`
+```
 
 ### 2. Header Authorization (Token simples)
 
-\`\`\`bash
-
-curl -H "Authorization: sua_chave_aqui" \\
-
+```bash
+curl -H "Authorization: sua_chave_aqui" \
   https://api.fretamaps.com.br/api/places/autocomplete?input=São Paulo
-
-\`\`\`
+```
 
 ### 3. Header Authorization (Bearer Token)
 
-\`\`\`bash
-
-curl -H "Authorization: Bearer sua_chave_aqui" \\
-
+```bash
+curl -H "Authorization: Bearer sua_chave_aqui" \
   https://api.fretamaps.com.br/api/places/autocomplete?input=São Paulo
-
-\`\`\`
+```
 
 ## Obter uma API Key
 
@@ -55,14 +46,9 @@ Os seguintes endpoints não requerem autenticação:
 
 Se a autenticação falhar, você receberá uma resposta `401 Unauthorized`:
 
-\`\`\`json
-
+```json
 {
-
   "error": "Unauthorized",
-
   "message": "API key inválida ou não fornecida"
-
 }
-
-\`\`\`
+```

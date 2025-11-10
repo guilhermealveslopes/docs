@@ -1,0 +1,143 @@
+---
+title: Place Details
+description: Obter detalhes completos de um lugar específico
+---
+
+# Place Details
+
+O endpoint de place details retorna informações detalhadas sobre um lugar específico, incluindo endereço completo, coordenadas geográficas e componentes de endereço.
+
+## Endpoint
+
+```http
+GET /api/places/details
+GET /maps/place
+```
+
+## Parâmetros de Query
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `place_id` | string | Sim | ID do lugar obtido do autocomplete |
+
+## Exemplo de Requisição
+
+```bash
+curl -H "X-API-Key: sua_chave_aqui" \
+  "https://api.fretamaps.com.br/api/places/details?place_id=ChIJ0WGkg4FEzpQRrlsz_whLqZs"
+```
+
+## Exemplo de Resposta
+
+```json
+{
+  "place_id": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
+  "name": "São Paulo",
+  "formatted_address": "São Paulo, SP, Brasil",
+  "geometry": {
+    "location": {
+      "lat": -23.5505,
+      "lng": -46.6333
+    },
+    "viewport": {
+      "northeast": {
+        "lat": -23.3566,
+        "lng": -46.3654
+      },
+      "southwest": {
+        "lat": -23.7044,
+        "lng": -46.9012
+      }
+    }
+  },
+  "address_components": {
+    "route": "",
+    "state": "São Paulo",
+    "state_short": "SP",
+    "city": "São Paulo",
+    "district": "",
+    "postal_code": ""
+  }
+}
+```
+
+## Estrutura de Resposta
+
+<ResponseField name="place_id" type="string" required>
+  Identificador único do lugar
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Nome do lugar
+</ResponseField>
+
+<ResponseField name="formatted_address" type="string" required>
+  Endereço formatado completo
+</ResponseField>
+
+<ResponseField name="geometry" type="object" required>
+  Informações geográficas do lugar
+</ResponseField>
+
+<ResponseField name="geometry.location" type="object" required>
+  Coordenadas do lugar
+</ResponseField>
+
+<ResponseField name="geometry.location.lat" type="number" required>
+  Latitude
+</ResponseField>
+
+<ResponseField name="geometry.location.lng" type="number" required>
+  Longitude
+</ResponseField>
+
+<ResponseField name="geometry.viewport" type="object" required>
+  Viewport sugerido para exibir o lugar
+</ResponseField>
+
+<ResponseField name="address_components" type="object" required>
+  Componentes do endereço
+</ResponseField>
+
+<ResponseField name="address_components.route" type="string">
+  Nome da rua/logradouro
+</ResponseField>
+
+<ResponseField name="address_components.state" type="string">
+  Nome completo do estado
+</ResponseField>
+
+<ResponseField name="address_components.state_short" type="string">
+  Sigla do estado (ex: SP, RJ)
+</ResponseField>
+
+<ResponseField name="address_components.city" type="string">
+  Nome da cidade
+</ResponseField>
+
+<ResponseField name="address_components.district" type="string">
+  Bairro/distrito
+</ResponseField>
+
+<ResponseField name="address_components.postal_code" type="string">
+  CEP
+</ResponseField>
+
+## Headers de Resposta
+
+- `X-Cache`: `HIT` se veio do cache, `MISS` se foi buscado da API
+- `X-Provider`: `Google` ou `Here`
+- `X-Format`: `Standard`
+
+## Códigos de Status
+
+- `200 OK` - Requisição bem-sucedida
+- `400 Bad Request` - Parâmetro `place_id` não fornecido ou inválido
+- `401 Unauthorized` - Autenticação falhou
+- `500 Internal Server Error` - Erro ao buscar dados do provedor
+
+## Notas
+
+- O `place_id` pode incluir prefixo do provedor (ex: `google:ChIJ0WGkg4FEzpQRrlsz_whLqZs` ou `here:NT_...`).
+- O sistema automaticamente extrai o ID limpo e valida o provedor.
+- Os dados são armazenados em cache para reduzir chamadas à API.

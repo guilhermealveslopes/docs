@@ -1,0 +1,244 @@
+---
+title: Routing (Directions)
+description: Calcular rotas completas entre pontos com waypoints opcionais
+---
+
+# Routing (Directions)
+
+O endpoint de routing calcula rotas completas entre um ponto de origem e um destino, com suporte a waypoints (pontos intermediários). Retorna distâncias e durações totais, além de informações sobre cada segmento da rota.
+
+## Endpoint
+
+```http
+POST /api/directions
+POST /maps/directions
+```
+
+## Método
+
+**POST** (requer body JSON)
+
+## Body da Requisição
+
+```json
+{
+  "origin": "-23.5505,-46.6333",
+  "destination": "-22.9068,-43.1729",
+  "waypoints": ["-23.5632,-46.6544"],
+  "force_refresh": false
+}
+```
+
+## Parâmetros do Body
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `origin` | string | Sim | Coordenadas de origem no formato `lat,lng` |
+| `destination` | string | Sim | Coordenadas de destino no formato `lat,lng` |
+| `waypoints` | array | Não | Array de coordenadas intermediárias no formato `["lat,lng", ...]` |
+| `force_refresh` | boolean | Não | Se `true`, força busca na API ignorando cache (padrão: `false`) |
+| `provider` | string | Não | Força uso de um provedor específico: `"google"` ou `"here"` |
+
+## Exemplo de Requisição
+
+```bash
+# Rota simples (sem waypoints)
+curl -X POST \
+  -H "X-API-Key: sua_chave_aqui" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "origin": "-23.5505,-46.6333",
+    "destination": "-22.9068,-43.1729"
+  }' \
+  https://api.fretamaps.com.br/api/directions
+
+# Rota com waypoints
+curl -X POST \
+  -H "X-API-Key: sua_chave_aqui" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "origin": "-23.5505,-46.6333",
+    "destination": "-22.9068,-43.1729",
+    "waypoints": [
+      "-23.5632,-46.6544",
+      "-23.5678,-46.6789"
+    ]
+  }' \
+  https://api.fretamaps.com.br/api/directions
+```
+
+## Exemplo de Resposta
+
+```json
+{
+  "status": "OK",
+  "total_distance": 429000,
+  "total_duration": 22320,
+  "base_duration": 21600,
+  "pairs_distances": {
+    "-23.5505,-46.6333;-22.9068,-43.1729": {
+      "distance": 429000,
+      "duration": 22320,
+      "pair": "-23.5505,-46.6333;-22.9068,-43.1729"
+    }
+  },
+  "source": "Google",
+  "origin": {
+    "lat": -23.5505,
+    "lng": -46.6333
+  },
+  "destination": {
+    "lat": -22.9068,
+    "lng": -43.1729
+  },
+  "stop_points": []
+}
+```
+
+## Estrutura de Resposta
+
+<ResponseField name="status" type="string" required>
+  Status da resposta: `"OK"` ou código de erro
+</ResponseField>
+
+<ResponseField name="total_distance" type="integer" required>
+  Distância total da rota em metros
+</ResponseField>
+
+<ResponseField name="total_duration" type="integer" required>
+  Duração total da rota em segundos (considera tráfego atual)
+</ResponseField>
+
+<ResponseField name="base_duration" type="integer">
+  Duração base sem tráfego em segundos (principalmente para HERE)
+</ResponseField>
+
+<ResponseField name="pairs_distances" type="object" required>
+  Mapa de distâncias por par de pontos (chave: "lat1,lng1;lat2,lng2")
+</ResponseField>
+
+<ResponseField name="pairs_distances[].distance" type="integer" required>
+  Distância do segmento em metros
+</ResponseField>
+
+<ResponseField name="pairs_distances[].duration" type="integer" required>
+  Duração do segmento em segundos
+</ResponseField>
+
+<ResponseField name="pairs_distances[].pair" type="string" required>
+  Chave do par no formato "lat1,lng1;lat2,lng2"
+</ResponseField>
+
+<ResponseField name="pairs_distances[].hereCoords" type="string">
+  Coordenadas HERE específicas (apenas para provedor HERE)
+</ResponseField>
+
+<ResponseField name="source" type="string" required>
+  Fonte dos dados: `"Google"`, `"Here"` ou `"Cache"`
+</ResponseField>
+
+<ResponseField name="origin" type="object" required>
+  Coordenadas de origem
+</ResponseField>
+
+<ResponseField name="origin.lat" type="number" required>
+  Latitude da origem
+</ResponseField>
+
+<ResponseField name="origin.lng" type="number" required>
+  Longitude da origem
+</ResponseField>
+
+<ResponseField name="destination" type="object" required>
+  Coordenadas de destino
+</ResponseField>
+
+<ResponseField name="destination.lat" type="number" required>
+  Latitude do destino
+</ResponseField>
+
+<ResponseField name="destination.lng" type="number" required>
+  Longitude do destino
+</ResponseField>
+
+<ResponseField name="stop_points" type="array">
+  Array de coordenadas dos waypoints
+</ResponseField>
+
+<ResponseField name="stop_points[].lat" type="number">
+  Latitude do waypoint
+</ResponseField>
+
+<ResponseField name="stop_points[].lng" type="number">
+  Longitude do waypoint
+</ResponseField>
+
+## Headers de Resposta
+
+- `X-Cache`: `HIT` se veio do cache, `MISS` se foi buscado da API
+- `X-Provider`: `Google` ou `Here`
+- `X-Format`: `Standard`
+
+## Códigos de Status
+
+- `200 OK` - Requisição bem-sucedida
+- `400 Bad Request` - Parâmetros `origin` ou `destination` não fornecidos ou inválidos
+- `401 Unauthorized` - Autenticação falhou
+- `500 Internal Server Error` - Erro ao buscar dados do provedor
+
+## Exemplo com Waypoints
+
+```json
+{
+  "status": "OK",
+  "total_distance": 123456,
+  "total_duration": 7200,
+  "pairs_distances": {
+    "-23.5505,-46.6333;-23.5632,-46.6544": {
+      "distance": 12345,
+      "duration": 1800,
+      "pair": "-23.5505,-46.6333;-23.5632,-46.6544"
+    },
+    "-23.5632,-46.6544;-23.5678,-46.6789": {
+      "distance": 23456,
+      "duration": 3600,
+      "pair": "-23.5632,-46.6544;-23.5678,-46.6789"
+    },
+    "-23.5678,-46.6789;-22.9068,-43.1729": {
+      "distance": 87655,
+      "duration": 1800,
+      "pair": "-23.5678,-46.6789;-22.9068,-43.1729"
+    }
+  },
+  "source": "Google",
+  "origin": {
+    "lat": -23.5505,
+    "lng": -46.6333
+  },
+  "destination": {
+    "lat": -22.9068,
+    "lng": -43.1729
+  },
+  "stop_points": [
+    {
+      "lat": -23.5632,
+      "lng": -46.6544
+    },
+    {
+      "lat": -23.5678,
+      "lng": -46.6789
+    }
+  ]
+}
+```
+
+## Notas
+
+- **Distâncias**: Sempre retornadas em **metros**
+- **Durações**: Sempre retornadas em **segundos**
+- O modo de transporte é sempre `driving` (veículo particular)
+- O sistema considera tráfego atual ao calcular durações
+- Rotas são armazenadas em cache para reduzir custos
+- Use `force_refresh: true` para forçar recálculo ignorando cache
+- O sistema suporta até 25 waypoints por rota (limite do provedor)
+- Em caso de falha na API de Directions, o sistema faz fallback automático para Distance Matrix

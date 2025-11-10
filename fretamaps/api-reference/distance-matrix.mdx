@@ -1,0 +1,197 @@
+---
+title: Distance Matrix
+description: Calcular distâncias e tempos de viagem entre múltiplos pontos
+---
+
+# Distance Matrix
+
+O endpoint de distance matrix calcula distâncias e tempos de viagem entre múltiplos pontos de origem e destino. É útil para otimização de rotas e cálculo de custos de frete.
+
+## Endpoint
+
+```http
+GET /api/distance-matrix
+GET /maps/distance-matrix
+```
+
+## Parâmetros de Query
+
+| Parâmetro | Tipo | Obrigatório | Descrição |
+|-----------|------|-------------|-----------|
+| `origins` | string | Sim | Coordenadas de origem no formato `lat,lng` ou múltiplas separadas por `\|` |
+| `destinations` | string | Sim | Coordenadas de destino no formato `lat,lng` ou múltiplas separadas por `\|` |
+
+## Formato de Coordenadas
+
+- **Ponto único**: `-23.5505,-46.6333`
+- **Múltiplos pontos**: `-23.5505,-46.6333|-22.9068,-43.1729`
+
+## Exemplo de Requisição
+
+```bash
+# Origem única para destino único
+curl -H "X-API-Key: sua_chave_aqui" \
+  "https://api.fretamaps.com.br/api/distance-matrix?origins=-23.5505,-46.6333&destinations=-22.9068,-43.1729"
+
+# Múltiplas origens e destinos
+curl -H "X-API-Key: sua_chave_aqui" \
+  "https://api.fretamaps.com.br/api/distance-matrix?origins=-23.5505,-46.6333|-23.5632,-46.6544&destinations=-22.9068,-43.1729|-23.5678,-46.6789"
+```
+
+## Exemplo de Resposta
+
+```json
+{
+  "origin_addresses": [
+    "São Paulo, SP, Brasil"
+  ],
+  "destination_addresses": [
+    "Rio de Janeiro, RJ, Brasil"
+  ],
+  "rows": [
+    {
+      "elements": [
+        {
+          "status": "OK",
+          "duration": {
+            "text": "6 horas 12 minutos",
+            "value": 22320
+          },
+          "distance": {
+            "text": "429 km",
+            "value": 429000
+          }
+        }
+      ]
+    }
+  ],
+  "status": "OK",
+  "source": "Google"
+}
+```
+
+## Estrutura de Resposta
+
+<ResponseField name="origin_addresses" type="array" required>
+  Array de endereços formatados das origens
+</ResponseField>
+
+<ResponseField name="destination_addresses" type="array" required>
+  Array de endereços formatados dos destinos
+</ResponseField>
+
+<ResponseField name="rows" type="array" required>
+  Array de linhas da matriz (uma por origem)
+</ResponseField>
+
+<ResponseField name="rows[].elements" type="array" required>
+  Array de elementos (um por destino)
+</ResponseField>
+
+<ResponseField name="rows[].elements[].status" type="string" required>
+  Status do cálculo: `"OK"` ou código de erro
+</ResponseField>
+
+<ResponseField name="rows[].elements[].duration" type="object" required>
+  Duração da viagem
+</ResponseField>
+
+<ResponseField name="rows[].elements[].duration.text" type="string" required>
+  Duração formatada (ex: "6 horas 12 minutos")
+</ResponseField>
+
+<ResponseField name="rows[].elements[].duration.value" type="integer" required>
+  Duração em segundos
+</ResponseField>
+
+<ResponseField name="rows[].elements[].distance" type="object" required>
+  Distância da viagem
+</ResponseField>
+
+<ResponseField name="rows[].elements[].distance.text" type="string" required>
+  Distância formatada (ex: "429 km")
+</ResponseField>
+
+<ResponseField name="rows[].elements[].distance.value" type="integer" required>
+  Distância em metros
+</ResponseField>
+
+<ResponseField name="status" type="string" required>
+  Status geral da resposta: `"OK"` ou código de erro
+</ResponseField>
+
+<ResponseField name="source" type="string" required>
+  Fonte dos dados: `"Google"`, `"Here"` ou `"Cache"`
+</ResponseField>
+
+<ResponseField name="error_message" type="string">
+  Mensagem de erro (apenas se status for erro)
+</ResponseField>
+
+## Headers de Resposta
+
+- `X-Cache`: `HIT` se veio do cache, `MISS` se foi buscado da API
+- `X-Provider`: `Google` ou `Here`
+- `X-Format`: `Standard`
+
+## Códigos de Status
+
+- `200 OK` - Requisição bem-sucedida
+- `400 Bad Request` - Parâmetros `origins` ou `destinations` não fornecidos
+- `401 Unauthorized` - Autenticação falhou
+- `500 Internal Server Error` - Erro ao buscar dados do provedor
+
+## Notas
+
+- **Distâncias**: Sempre retornadas em **metros** no campo `value`
+- **Durações**: Sempre retornadas em **segundos** no campo `value`
+- O modo de transporte é sempre `driving` (veículo particular)
+- Para matrizes grandes, considere usar o cache para reduzir custos
+- O sistema suporta até 25 origens e 25 destinos por requisição (limites do provedor)
+
+## Exemplo com Múltiplos Pontos
+
+```json
+{
+  "origin_addresses": [
+    "São Paulo, SP, Brasil",
+    "Campinas, SP, Brasil"
+  ],
+  "destination_addresses": [
+    "Rio de Janeiro, RJ, Brasil",
+    "Belo Horizonte, MG, Brasil"
+  ],
+  "rows": [
+    {
+      "elements": [
+        {
+          "status": "OK",
+          "duration": {"text": "6 horas", "value": 21600},
+          "distance": {"text": "429 km", "value": 429000}
+        },
+        {
+          "status": "OK",
+          "duration": {"text": "7 horas", "value": 25200},
+          "distance": {"text": "586 km", "value": 586000}
+        }
+      ]
+    },
+    {
+      "elements": [
+        {
+          "status": "OK",
+          "duration": {"text": "5 horas", "value": 18000},
+          "distance": {"text": "358 km", "value": 358000}
+        },
+        {
+          "status": "OK",
+          "duration": {"text": "6 horas", "value": 21600},
+          "distance": {"text": "515 km", "value": 515000}
+        }
+      ]
+    }
+  ],
+  "status": "OK",
+  "source": "Google"
+}
+```
