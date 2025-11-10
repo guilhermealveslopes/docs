@@ -1,0 +1,167 @@
+---
+title: Estrutura: Place Details
+description: Estrutura de dados retornada pelo endpoint de place details
+---
+
+# Estrutura: Place Details
+
+## Schema Completo
+
+```typescript
+interface StandardPlaceDetails {
+  place_id: string;
+  name: string;
+  formatted_address: string;
+  geometry: StandardGeometry;
+  address_components: StandardAddressComponents;
+}
+
+interface StandardGeometry {
+  location: StandardLocation;
+  viewport: StandardViewport;
+}
+
+interface StandardLocation {
+  lat: number;
+  lng: number;
+}
+
+interface StandardViewport {
+  northeast: StandardLocation;
+  southwest: StandardLocation;
+}
+
+interface StandardAddressComponents {
+  route?: string;
+  state: string;
+  state_short: string;
+  city: string;
+  district?: string;
+  postal_code?: string;
+}
+```
+
+## Campos Detalhados
+
+### `place_id` (string, obrigatório)
+
+Identificador único do lugar.
+
+**Exemplo**: `"ChIJ0WGkg4FEzpQRrlsz_whLqZs"`
+
+### `name` (string, obrigatório)
+
+Nome do lugar.
+
+**Exemplo**: `"São Paulo"`
+
+### `formatted_address` (string, obrigatório)
+
+Endereço completo formatado.
+
+**Exemplo**: `"São Paulo, SP, Brasil"`
+
+### `geometry` (object, obrigatório)
+
+Informações geográficas do lugar.
+
+#### `geometry.location` (object, obrigatório)
+
+Coordenadas exatas do lugar.
+
+- `lat` (number): Latitude
+- `lng` (number): Longitude
+
+**Exemplo**:
+```json
+{
+  "lat": -23.5505,
+  "lng": -46.6333
+}
+```
+
+#### `geometry.viewport` (object, obrigatório)
+
+Viewport sugerido para exibir o lugar em um mapa.
+
+- `northeast` (object): Canto superior direito do viewport
+- `southwest` (object): Canto inferior esquerdo do viewport
+
+**Exemplo**:
+```json
+{
+  "northeast": {
+    "lat": -23.3566,
+    "lng": -46.3654
+  },
+  "southwest": {
+    "lat": -23.7044,
+    "lng": -46.9012
+  }
+}
+```
+
+### `address_components` (object, obrigatório)
+
+Componentes estruturados do endereço.
+
+#### Campos do `address_components`:
+
+- `route` (string, opcional): Nome da rua/logradouro
+- `state` (string, obrigatório): Nome completo do estado
+- `state_short` (string, obrigatório): Sigla do estado (ex: SP, RJ)
+- `city` (string, obrigatório): Nome da cidade
+- `district` (string, opcional): Bairro/distrito
+- `postal_code` (string, opcional): CEP
+
+**Exemplo**:
+```json
+{
+  "route": "Avenida Paulista",
+  "state": "São Paulo",
+  "state_short": "SP",
+  "city": "São Paulo",
+  "district": "Bela Vista",
+  "postal_code": "01310-100"
+}
+```
+
+## Exemplo Completo
+
+```json
+{
+  "place_id": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
+  "name": "São Paulo",
+  "formatted_address": "São Paulo, SP, Brasil",
+  "geometry": {
+    "location": {
+      "lat": -23.5505,
+      "lng": -46.6333
+    },
+    "viewport": {
+      "northeast": {
+        "lat": -23.3566,
+        "lng": -46.3654
+      },
+      "southwest": {
+        "lat": -23.7044,
+        "lng": -46.9012
+      }
+    }
+  },
+  "address_components": {
+    "route": "",
+    "state": "São Paulo",
+    "state_short": "SP",
+    "city": "São Paulo",
+    "district": "",
+    "postal_code": ""
+  }
+}
+```
+
+## Notas de Implementação
+
+- Campos opcionais podem estar vazios (`""`) ou ausentes
+- O `viewport` é útil para definir o zoom e bounds de um mapa
+- O `place_id` pode ser usado para futuras requisições ou armazenamento

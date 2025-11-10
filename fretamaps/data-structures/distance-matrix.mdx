@@ -1,0 +1,223 @@
+---
+title: Estrutura: Distance Matrix
+description: Estrutura de dados retornada pelo endpoint de distance matrix
+---
+
+# Estrutura: Distance Matrix Response
+
+## Schema Completo
+
+```typescript
+interface StandardDistanceMatrixResponse {
+  origin_addresses: string[];
+  destination_addresses: string[];
+  rows: StandardMatrixRow[];
+  status: string;
+  error_message?: string;
+  source: "Google" | "Here" | "Cache";
+}
+
+interface StandardMatrixRow {
+  elements: StandardMatrixElement[];
+}
+
+interface StandardMatrixElement {
+  status: string;
+  duration: StandardDurationValue;
+  distance: StandardDistanceValue;
+}
+
+interface StandardDurationValue {
+  text: string;   // Ex: "6 horas 12 minutos"
+  value: number;  // Em segundos
+}
+
+interface StandardDistanceValue {
+  text: string;   // Ex: "429 km"
+  value: number;  // Em metros
+}
+```
+
+## Campos Detalhados
+
+### `origin_addresses` (array, obrigatório)
+
+Array de endereços formatados das origens, na mesma ordem fornecida na requisição.
+
+**Exemplo**: `["São Paulo, SP, Brasil", "Campinas, SP, Brasil"]`
+
+### `destination_addresses` (array, obrigatório)
+
+Array de endereços formatados dos destinos, na mesma ordem fornecida na requisição.
+
+**Exemplo**: `["Rio de Janeiro, RJ, Brasil", "Belo Horizonte, MG, Brasil"]`
+
+### `rows` (array, obrigatório)
+
+Array de linhas da matriz. Cada linha corresponde a uma origem.
+
+**Tipo**: `StandardMatrixRow[]`
+
+#### `rows[].elements` (array, obrigatório)
+
+Array de elementos. Cada elemento corresponde a um destino.
+
+**Tipo**: `StandardMatrixElement[]`
+
+#### `rows[].elements[].status` (string, obrigatório)
+
+Status do cálculo para este par origem-destino.
+
+**Valores possíveis**:
+- `"OK"` - Cálculo bem-sucedido
+- `"NOT_FOUND"` - Origem ou destino não encontrado
+- `"ZERO_RESULTS"` - Nenhuma rota encontrada
+- `"MAX_ROUTE_LENGTH_EXCEEDED"` - Rota muito longa
+
+#### `rows[].elements[].duration` (object, obrigatório)
+
+Duração da viagem entre origem e destino.
+
+- `text` (string): Duração formatada em português (ex: "6 horas 12 minutos")
+- `value` (number): Duração em **segundos**
+
+**Exemplo**:
+```json
+{
+  "text": "6 horas 12 minutos",
+  "value": 22320
+}
+```
+
+#### `rows[].elements[].distance` (object, obrigatório)
+
+Distância entre origem e destino.
+
+- `text` (string): Distância formatada (ex: "429 km")
+- `value` (number): Distância em **metros**
+
+**Exemplo**:
+```json
+{
+  "text": "429 km",
+  "value": 429000
+}
+```
+
+### `status` (string, obrigatório)
+
+Status geral da resposta.
+
+**Valores possíveis**:
+- `"OK"` - Requisição bem-sucedida
+- `"INVALID_REQUEST"` - Requisição inválida
+- `"MAX_ELEMENTS_EXCEEDED"` - Limite de elementos excedido
+- `"OVER_QUERY_LIMIT"` - Limite de requisições excedido
+- `"REQUEST_DENIED"` - Requisição negada
+- `"UNKNOWN_ERROR"` - Erro desconhecido
+
+### `error_message` (string, opcional)
+
+Mensagem de erro detalhada (apenas presente se `status` não for `"OK"`).
+
+### `source` (string, obrigatório)
+
+Fonte dos dados.
+
+**Valores possíveis**:
+- `"Google"` - Dados obtidos da API do Google Maps
+- `"Here"` - Dados obtidos da API do HERE Maps
+- `"Cache"` - Dados obtidos do cache MongoDB
+
+## Exemplo Completo
+
+### Matriz Simples (1 origem, 1 destino)
+
+```json
+{
+  "origin_addresses": [
+    "São Paulo, SP, Brasil"
+  ],
+  "destination_addresses": [
+    "Rio de Janeiro, RJ, Brasil"
+  ],
+  "rows": [
+    {
+      "elements": [
+        {
+          "status": "OK",
+          "duration": {
+            "text": "6 horas 12 minutos",
+            "value": 22320
+          },
+          "distance": {
+            "text": "429 km",
+            "value": 429000
+          }
+        }
+      ]
+    }
+  ],
+  "status": "OK",
+  "source": "Google"
+}
+```
+
+### Matriz Múltipla (2 origens, 2 destinos)
+
+```json
+{
+  "origin_addresses": [
+    "São Paulo, SP, Brasil",
+    "Campinas, SP, Brasil"
+  ],
+  "destination_addresses": [
+    "Rio de Janeiro, RJ, Brasil",
+    "Belo Horizonte, MG, Brasil"
+  ],
+  "rows": [
+    {
+      "elements": [
+        {
+          "status": "OK",
+          "duration": {"text": "6 horas", "value": 21600},
+          "distance": {"text": "429 km", "value": 429000}
+        },
+        {
+          "status": "OK",
+          "duration": {"text": "7 horas", "value": 25200},
+          "distance": {"text": "586 km", "value": 586000}
+        }
+      ]
+    },
+    {
+      "elements": [
+        {
+          "status": "OK",
+          "duration": {"text": "5 horas", "value": 18000},
+          "distance": {"text": "358 km", "value": 358000}
+        },
+        {
+          "status": "OK",
+          "duration": {"text": "6 horas", "value": 21600},
+          "distance": {"text": "515 km", "value": 515000}
+        }
+      ]
+    }
+  ],
+  "status": "OK",
+  "source": "Google"
+}
+```
+
+## Notas de Implementação
+
+- **Unidades**: 
+  - Distâncias sempre em **metros** (`value`)
+  - Durações sempre em **segundos** (`value`)
+- **Ordem**: A ordem dos arrays corresponde à ordem dos parâmetros fornecidos
+- **Indexação**: Para acessar a distância da origem `i` para o destino `j`:
+  ```javascript
+  const distance = response.rows[i].elements[j].distance.value;
+  ```
+- **Status**: Sempre verifique o `status` de cada elemento antes de usar os valores

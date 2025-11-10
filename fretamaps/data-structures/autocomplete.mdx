@@ -1,0 +1,96 @@
+---
+title: Estrutura: Autocomplete
+description: Estrutura de dados retornada pelo endpoint de autocomplete
+---
+
+# Estrutura: Autocomplete Response
+
+## Schema Completo
+
+```typescript
+interface StandardAutocompleteResponse {
+  predictions: StandardAutocompletePrediction[];
+  source: "Google" | "Here" | "Cache";
+}
+
+interface StandardAutocompletePrediction {
+  id: string;           // place_id único
+  description: string;  // Descrição formatada do lugar
+}
+```
+
+## Campos Detalhados
+
+### `predictions` (array, obrigatório)
+
+Array de previsões de lugares baseadas na entrada do usuário.
+
+**Tipo**: `StandardAutocompletePrediction[]`
+
+**Exemplo**:
+```json
+[
+  {
+    "id": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
+    "description": "São Paulo, SP, Brasil"
+  },
+  {
+    "id": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
+    "description": "São Paulo, Estado de São Paulo, Brasil"
+  }
+]
+```
+
+### `predictions[].id` (string, obrigatório)
+
+Identificador único do lugar (place_id). Este ID deve ser usado para buscar detalhes do lugar através do endpoint `/api/places/details`.
+
+**Formato**:
+- Google: `ChIJ0WGkg4FEzpQRrlsz_whLqZs`
+- HERE: `NT_...` (pode incluir prefixo `here:`)
+
+**Exemplo**: `"ChIJ0WGkg4FEzpQRrlsz_whLqZs"`
+
+### `predictions[].description` (string, obrigatório)
+
+Descrição formatada e legível do lugar, geralmente incluindo cidade, estado e país.
+
+**Exemplo**: `"São Paulo, SP, Brasil"`
+
+### `source` (string, obrigatório)
+
+Indica a origem dos dados retornados.
+
+**Valores possíveis**:
+- `"Google"` - Dados obtidos da API do Google Maps
+- `"Here"` - Dados obtidos da API do HERE Maps
+- `"Cache"` - Dados obtidos do cache MongoDB
+
+## Exemplo Completo
+
+```json
+{
+  "predictions": [
+    {
+      "id": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
+      "description": "São Paulo, SP, Brasil"
+    },
+    {
+      "id": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
+      "description": "São Paulo, Estado de São Paulo, Brasil"
+    },
+    {
+      "id": "ChIJX6tO7rJZwokR6lX3BfNv7qE",
+      "description": "São Paulo, Brasil"
+    }
+  ],
+  "source": "Google"
+}
+```
+
+## Notas de Implementação
+
+- O array `predictions` pode estar vazio se nenhum resultado for encontrado
+- Os resultados são limitados a 5 sugestões por padrão
+- O campo `id` deve ser usado para requisições subsequentes ao endpoint de place details
+- O sistema prioriza resultados do Brasil (`country:br`)

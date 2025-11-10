@@ -1,0 +1,247 @@
+---
+title: Estrutura: Routing
+description: Estrutura de dados retornada pelo endpoint de routing/directions
+---
+
+# Estrutura: Route Response
+
+## Schema Completo
+
+```typescript
+interface StandardRouteResponse {
+  status: string;
+  total_distance: number;        // Em metros
+  total_duration: number;         // Em segundos
+  base_duration?: number;         // Em segundos (opcional, principalmente HERE)
+  pairs_distances: {
+    [key: string]: StandardPairDistance;
+  };
+  source: "Google" | "Here" | "Cache";
+  origin: StandardLocation;
+  destination: StandardLocation;
+  stop_points?: StandardLocation[];
+}
+
+interface StandardPairDistance {
+  distance: number;    // Em metros
+  duration: number;    // Em segundos
+  pair: string;        // Formato: "lat1,lng1;lat2,lng2"
+  hereCoords?: string; // Opcional, apenas para HERE
+}
+
+interface StandardLocation {
+  lat: number;
+  lng: number;
+}
+```
+
+## Campos Detalhados
+
+### `status` (string, obrigatório)
+
+Status da resposta.
+
+**Valores possíveis**:
+- `"OK"` - Rota calculada com sucesso
+- `"NOT_FOUND"` - Origem ou destino não encontrado
+- `"ZERO_RESULTS"` - Nenhuma rota encontrada
+- `"MAX_ROUTE_LENGTH_EXCEEDED"` - Rota muito longa
+
+### `total_distance` (number, obrigatório)
+
+Distância total da rota em **metros**.
+
+**Exemplo**: `429000` (429 km)
+
+### `total_duration` (number, obrigatório)
+
+Duração total da rota em **segundos**, considerando tráfego atual.
+
+**Exemplo**: `22320` (6 horas e 12 minutos)
+
+### `base_duration` (number, opcional)
+
+Duração base sem considerar tráfego em **segundos**. Principalmente presente em respostas do HERE Maps.
+
+**Exemplo**: `21600` (6 horas)
+
+### `pairs_distances` (object, obrigatório)
+
+Mapa de distâncias e durações por segmento da rota. A chave é uma string no formato `"lat1,lng1;lat2,lng2"`.
+
+**Estrutura**:
+- **Chave**: String no formato `"lat1,lng1;lat2,lng2"` representando o par de pontos
+- **Valor**: Objeto `StandardPairDistance` com informações do segmento
+
+**Exemplo**:
+```json
+{
+  "-23.5505,-46.6333;-22.9068,-43.1729": {
+    "distance": 429000,
+    "duration": 22320,
+    "pair": "-23.5505,-46.6333;-22.9068,-43.1729"
+  }
+}
+```
+
+#### `pairs_distances[].distance` (number, obrigatório)
+
+Distância do segmento em **metros**.
+
+#### `pairs_distances[].duration` (number, obrigatório)
+
+Duração do segmento em **segundos**.
+
+#### `pairs_distances[].pair` (string, obrigatório)
+
+Chave do par no formato `"lat1,lng1;lat2,lng2"`.
+
+#### `pairs_distances[].hereCoords` (string, opcional)
+
+Coordenadas específicas do HERE (apenas presente em respostas do provedor HERE).
+
+### `source` (string, obrigatório)
+
+Fonte dos dados.
+
+**Valores possíveis**:
+- `"Google"` - Dados obtidos da API do Google Maps
+- `"Here"` - Dados obtidos da API do HERE Maps
+- `"Cache"` - Dados obtidos do cache MongoDB
+
+### `origin` (object, obrigatório)
+
+Coordenadas do ponto de origem.
+
+- `lat` (number): Latitude
+- `lng` (number): Longitude
+
+**Exemplo**:
+```json
+{
+  "lat": -23.5505,
+  "lng": -46.6333
+}
+```
+
+### `destination` (object, obrigatório)
+
+Coordenadas do ponto de destino.
+
+- `lat` (number): Latitude
+- `lng` (number): Longitude
+
+**Exemplo**:
+```json
+{
+  "lat": -22.9068,
+  "lng": -43.1729
+}
+```
+
+### `stop_points` (array, opcional)
+
+Array de coordenadas dos waypoints (pontos intermediários), se houver.
+
+**Exemplo**:
+```json
+[
+  {
+    "lat": -23.5632,
+    "lng": -46.6544
+  },
+  {
+    "lat": -23.5678,
+    "lng": -46.6789
+  }
+]
+```
+
+## Exemplo Completo
+
+### Rota Simples (sem waypoints)
+
+```json
+{
+  "status": "OK",
+  "total_distance": 429000,
+  "total_duration": 22320,
+  "pairs_distances": {
+    "-23.5505,-46.6333;-22.9068,-43.1729": {
+      "distance": 429000,
+      "duration": 22320,
+      "pair": "-23.5505,-46.6333;-22.9068,-43.1729"
+    }
+  },
+  "source": "Google",
+  "origin": {
+    "lat": -23.5505,
+    "lng": -46.6333
+  },
+  "destination": {
+    "lat": -22.9068,
+    "lng": -43.1729
+  },
+  "stop_points": []
+}
+```
+
+### Rota com Waypoints
+
+```json
+{
+  "status": "OK",
+  "total_distance": 123456,
+  "total_duration": 7200,
+  "pairs_distances": {
+    "-23.5505,-46.6333;-23.5632,-46.6544": {
+      "distance": 12345,
+      "duration": 1800,
+      "pair": "-23.5505,-46.6333;-23.5632,-46.6544"
+    },
+    "-23.5632,-46.6544;-23.5678,-46.6789": {
+      "distance": 23456,
+      "duration": 3600,
+      "pair": "-23.5632,-46.6544;-23.5678,-46.6789"
+    },
+    "-23.5678,-46.6789;-22.9068,-43.1729": {
+      "distance": 87655,
+      "duration": 1800,
+      "pair": "-23.5678,-46.6789;-22.9068,-43.1729"
+    }
+  },
+  "source": "Google",
+  "origin": {
+    "lat": -23.5505,
+    "lng": -46.6333
+  },
+  "destination": {
+    "lat": -22.9068,
+    "lng": -43.1729
+  },
+  "stop_points": [
+    {
+      "lat": -23.5632,
+      "lng": -46.6544
+    },
+    {
+      "lat": -23.5678,
+      "lng": -46.6789
+    }
+  ]
+}
+```
+
+## Notas de Implementação
+
+- **Unidades**: 
+  - Distâncias sempre em **metros**
+  - Durações sempre em **segundos**
+- **Segmentação**: Com waypoints, a rota é dividida em segmentos:
+  - Origem → Waypoint 1
+  - Waypoint 1 → Waypoint 2
+  - ...
+  - Waypoint N → Destino
+- **Soma de segmentos**: `total_distance` e `total_duration` são a soma de todos os segmentos
+- **Chaves do mapa**: As chaves em `pairs_distances` seguem o padrão `"lat1,lng1;lat2,lng2"` e podem ser usadas para identificar segmentos específicos
+- **Tráfego**: `total_duration` considera tráfego atual; `base_duration` (quando presente) não considera tráfego
