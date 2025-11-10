@@ -7,4 +7,62 @@ description: Formato padronizado de dados retornados pela API
 
 A API FretaMaps utiliza um formato padronizado para todas as respostas, independente do provedor utilizado (Google Maps ou HERE Maps). Isso garante consistência e facilita a integração.
 
+## Princípios de Padronização
 
+1. **Formato único**: Todas as respostas seguem a mesma estrutura
+2. **Unidades consistentes**: 
+   - Distâncias sempre em **metros**
+   - Durações sempre em **segundos**
+3. **Campo `source`**: Indica a origem dos dados (`Google`, `Here`, ou `Cache`)
+4. **Headers informativos**: `X-Cache`, `X-Provider`, `X-Format`
+
+## Estruturas Principais
+
+- **[Autocomplete Response](/fretamaps/data-structures/autocomplete)** - Sugestões de lugares
+- **[Place Details](/fretamaps/data-structures/place-details)** - Detalhes de um lugar
+- **[Distance Matrix Response](/fretamaps/data-structures/distance-matrix)** - Matriz de distâncias
+- **[Route Response](/fretamaps/data-structures/routing)** - Rotas e direções
+
+## Formato de Coordenadas
+
+Todas as coordenadas seguem o formato:
+
+```json
+{
+  "lat": -23.5505,
+  "lng": -46.6333
+}
+```
+
+Onde:
+- `lat`: Latitude (número decimal)
+- `lng`: Longitude (número decimal)
+
+## Formato de Strings de Coordenadas
+
+Em parâmetros de query e body, as coordenadas são representadas como strings:
+
+```
+"-23.5505,-46.6333"
+```
+
+Para múltiplos pontos, separados por `|`:
+
+```
+"-23.5505,-46.6333|-22.9068,-43.1729"
+```
+
+## Tratamento de Erros
+
+Todas as estruturas de erro seguem o formato:
+
+```json
+{
+  "error": "Código do erro",
+  "message": "Descrição detalhada do erro"
+}
+```
+
+## Cache
+
+O sistema utiliza cache MongoDB para otimizar performance e reduzir custos. Respostas em cache são identificadas pelo header `X-Cache: HIT`.
