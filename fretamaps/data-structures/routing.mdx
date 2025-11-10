@@ -1,6 +1,6 @@
 ---
-title: Estrutura: Routing
-description: Estrutura de dados retornada pelo endpoint de routing/directions
+title: Routing
+description: "Estrutura de dados retornada pelo endpoint de routing/directions"
 ---
 
 # Estrutura: Route Response
@@ -42,6 +42,7 @@ interface StandardLocation {
 Status da resposta.
 
 **Valores possíveis**:
+
 - `"OK"` - Rota calculada com sucesso
 - `"NOT_FOUND"` - Origem ou destino não encontrado
 - `"ZERO_RESULTS"` - Nenhuma rota encontrada
@@ -70,10 +71,12 @@ Duração base sem considerar tráfego em **segundos**. Principalmente presente 
 Mapa de distâncias e durações por segmento da rota. A chave é uma string no formato `"lat1,lng1;lat2,lng2"`.
 
 **Estrutura**:
+
 - **Chave**: String no formato `"lat1,lng1;lat2,lng2"` representando o par de pontos
 - **Valor**: Objeto `StandardPairDistance` com informações do segmento
 
 **Exemplo**:
+
 ```json
 {
   "-23.5505,-46.6333;-22.9068,-43.1729": {
@@ -105,6 +108,7 @@ Coordenadas específicas do HERE (apenas presente em respostas do provedor HERE)
 Fonte dos dados.
 
 **Valores possíveis**:
+
 - `"Google"` - Dados obtidos da API do Google Maps
 - `"Here"` - Dados obtidos da API do HERE Maps
 - `"Cache"` - Dados obtidos do cache MongoDB
@@ -117,6 +121,7 @@ Coordenadas do ponto de origem.
 - `lng` (number): Longitude
 
 **Exemplo**:
+
 ```json
 {
   "lat": -23.5505,
@@ -132,6 +137,7 @@ Coordenadas do ponto de destino.
 - `lng` (number): Longitude
 
 **Exemplo**:
+
 ```json
 {
   "lat": -22.9068,
@@ -144,6 +150,7 @@ Coordenadas do ponto de destino.
 Array de coordenadas dos waypoints (pontos intermediários), se houver.
 
 **Exemplo**:
+
 ```json
 [
   {
@@ -234,7 +241,7 @@ Array de coordenadas dos waypoints (pontos intermediários), se houver.
 
 ## Notas de Implementação
 
-- **Unidades**: 
+- **Unidades**:
   - Distâncias sempre em **metros**
   - Durações sempre em **segundos**
 - **Segmentação**: Com waypoints, a rota é dividida em segmentos:
