@@ -1,6 +1,6 @@
 ---
-title: "Autocomplete"
-description: "Buscar sugestões de lugares baseado em uma entrada de texto"
+title: Autocomplete
+description: Buscar sugestões de lugares baseado em uma entrada de texto
 ---
 
 # Autocomplete
@@ -9,112 +9,75 @@ O endpoint de autocomplete retorna sugestões de lugares baseado em uma entrada 
 
 ## Endpoint
 
-\`\`\`http
-
+```http
 GET /api/places/autocomplete
-
 GET /maps/autocomplete
-
-\`\`\`
+```
 
 ## Parâmetros de Query
 
 | Parâmetro | Tipo | Obrigatório | Descrição |
-
 |-----------|------|-------------|-----------|
-
 | `input` | string | Sim | Texto de busca parcial |
 
 ## Exemplo de Requisição
 
-\`\`\`bash
-
-curl -H "X-API-Key: sua_chave_aqui" \\
-
+```bash
+curl -H "X-API-Key: sua_chave_aqui" \
   "https://api.fretamaps.com.br/api/places/autocomplete?input=São Paulo"
-
-\`\`\`
+```
 
 ## Exemplo de Resposta
 
-\`\`\`json
-
+```json
 {
-
   "predictions": [
-
     {
-
       "id": "ChIJ0WGkg4FEzpQRrlsz_whLqZs",
-
       "description": "São Paulo, SP, Brasil"
-
     },
-
     {
-
       "id": "ChIJd8BlQ2BZwokRAFUEcm_qrcA",
-
       "description": "São Paulo, Estado de São Paulo, Brasil"
-
     }
-
   ],
-
   "source": "Google"
-
 }
-
-\`\`\`
+```
 
 ## Estrutura de Resposta
 
-\<ResponseField name="predictions" type="array" required\>
-
+<ResponseField name="predictions" type="array" required>
   Array de previsões de lugares
+</ResponseField>
 
-\</ResponseField\>
-
-\<ResponseField name="predictions[].id" type="string" required\>
-
+<ResponseField name="predictions[].id" type="string" required>
   Identificador único do lugar (place_id)
+</ResponseField>
 
-\</ResponseField\>
-
-\<ResponseField name="predictions[].description" type="string" required\>
-
+<ResponseField name="predictions[].description" type="string" required>
   Descrição formatada do lugar
+</ResponseField>
 
-\</ResponseField\>
-
-\<ResponseField name="source" type="string" required\>
-
+<ResponseField name="source" type="string" required>
   Fonte dos dados: `"Google"`, `"Here"` ou `"Cache"`
-
-\</ResponseField\>
+</ResponseField>
 
 ## Headers de Resposta
 
 - `X-Cache`: `HIT` se veio do cache, `MISS` se foi buscado da API
-
 - `X-Provider`: `Google` ou `Here`
-
 - `X-Format`: `Standard`
 
 ## Códigos de Status
 
 - `200 OK` - Requisição bem-sucedida
-
 - `400 Bad Request` - Parâmetro `input` não fornecido
-
 - `401 Unauthorized` - Autenticação falhou
-
 - `500 Internal Server Error` - Erro ao buscar dados do provedor
 
 ## Notas
 
 - O cache é verificado primeiro. Se houver resultado em cache válido, ele será retornado imediatamente.
-
 - Os resultados são limitados a 5 sugestões por padrão.
-
-- A busca é otimizada para o Brasil `country:br`).
+- A busca é otimizada para o Brasil (`country:br`).
