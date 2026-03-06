@@ -1,0 +1,505 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-03-06T00:00:00.000Z",
+  "__export_source": "insomnia.desktop.app:v10.0.0",
+  "resources": [
+    {
+      "_id": "wrk_partner_api",
+      "_type": "workspace",
+      "name": "GDS Partner API v1",
+      "description": "API para parceiros externos do GDS Fretatech"
+    },
+    {
+      "_id": "env_partner_api",
+      "_type": "environment",
+      "name": "Produção",
+      "parentId": "wrk_partner_api",
+      "data": {
+        "base_url": "https://seu-tenant.fretatech.com.br",
+        "api_key": ""
+      },
+      "color": "#7c5cfc"
+    },
+    {
+      "_id": "env_partner_local",
+      "_type": "environment",
+      "name": "Local",
+      "parentId": "wrk_partner_api",
+      "data": {
+        "base_url": "http://gds.test",
+        "api_key": ""
+      },
+      "color": "#27ae60"
+    },
+    {
+      "_id": "fld_customers",
+      "_type": "request_group",
+      "name": "Clientes",
+      "parentId": "wrk_partner_api",
+      "description": "CRUD de clientes"
+    },
+    {
+      "_id": "req_customers_list",
+      "_type": "request",
+      "name": "Listar Clientes",
+      "parentId": "fld_customers",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/customers?search=&type=&status=&page=1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "parameters": [
+        { "name": "search", "value": "", "description": "Busca por nome ou documento" },
+        { "name": "type", "value": "", "description": "individual | company" },
+        { "name": "status", "value": "", "description": "active | inactive" },
+        { "name": "page", "value": "1" }
+      ]
+    },
+    {
+      "_id": "req_customers_create",
+      "_type": "request",
+      "name": "Criar Cliente (PJ)",
+      "parentId": "fld_customers",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/partner/v1/customers",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"type\": \"company\",\n  \"name\": \"Empresa ABC\",\n  \"email\": \"contato@empresa.com.br\",\n  \"phone\": \"(11) 98765-4321\",\n  \"cnpj_cpf\": \"12.345.678/0001-99\",\n  \"integration_code\": \"EMP-001\",\n  \"address\": {\n    \"street\": \"Av. Paulista\",\n    \"number\": \"1000\",\n    \"city\": \"São Paulo\",\n    \"state\": \"SP\",\n    \"zip\": \"01310-100\"\n  }\n}"
+      }
+    },
+    {
+      "_id": "req_customers_create_pf",
+      "_type": "request",
+      "name": "Criar Cliente (PF)",
+      "parentId": "fld_customers",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/partner/v1/customers",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"type\": \"individual\",\n  \"name\": \"João\",\n  \"last_name\": \"Silva\",\n  \"email\": \"joao@email.com\",\n  \"phone\": \"(11) 99999-1234\",\n  \"cnpj_cpf\": \"123.456.789-00\",\n  \"integration_code\": \"CLI-001\"\n}"
+      }
+    },
+    {
+      "_id": "req_customers_show",
+      "_type": "request",
+      "name": "Ver Cliente",
+      "parentId": "fld_customers",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/customers/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_customers_update",
+      "_type": "request",
+      "name": "Atualizar Cliente",
+      "parentId": "fld_customers",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/partner/v1/customers/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"email\": \"novo@email.com\",\n  \"phone\": \"(11) 98765-0000\",\n  \"integration_code\": \"EMP-001-UPDATED\"\n}"
+      }
+    },
+    {
+      "_id": "req_customers_by_code",
+      "_type": "request",
+      "name": "Buscar por Código de Integração",
+      "parentId": "fld_customers",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/customers/by-code/EMP-001",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "fld_search",
+      "_type": "request_group",
+      "name": "Busca de Veículos",
+      "parentId": "wrk_partner_api",
+      "description": "Padrão: POST para iniciar → GET para polling até status=complete"
+    },
+    {
+      "_id": "req_search_initiate",
+      "_type": "request",
+      "name": "Iniciar Busca",
+      "parentId": "fld_search",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/partner/v1/search",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"origin\": \"Aeroporto de Guarulhos, Guarulhos - SP\",\n  \"destination\": \"Av. Paulista, 1000, São Paulo - SP\",\n  \"trip_date\": \"2026/04/15\",\n  \"trip_time\": \"10:00\",\n  \"trip_type\": \"onewaytrip\",\n  \"passengers\": 40\n}"
+      }
+    },
+    {
+      "_id": "req_search_poll",
+      "_type": "request",
+      "name": "Consultar Resultado (Polling)",
+      "parentId": "fld_search",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/search/123",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "description": "Substitua 123 pelo search_db_id retornado ao iniciar a busca.\nConsulte a cada ~2 segundos até status = \"complete\"."
+    },
+    {
+      "_id": "fld_quotes",
+      "_type": "request_group",
+      "name": "Orçamentos",
+      "parentId": "wrk_partner_api",
+      "description": "Criação e consulta de orçamentos"
+    },
+    {
+      "_id": "req_quotes_list",
+      "_type": "request",
+      "name": "Listar Orçamentos",
+      "parentId": "fld_quotes",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/quotes",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "parameters": [
+        { "name": "customer_id", "value": "", "description": "Filtrar por cliente" },
+        { "name": "status", "value": "", "description": "pending | approved | rejected" },
+        { "name": "date_from", "value": "", "description": "YYYY-MM-DD" },
+        { "name": "date_to", "value": "", "description": "YYYY-MM-DD" },
+        { "name": "page", "value": "1" }
+      ]
+    },
+    {
+      "_id": "req_quotes_create",
+      "_type": "request",
+      "name": "Criar Orçamento",
+      "parentId": "fld_quotes",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/partner/v1/quotes",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"customer_id\": 1,\n  \"default_margin_percentage\": 15,\n  \"simpleTrip\": {\n    \"tripType\": \"onewaytrip\",\n    \"passengers\": 40,\n    \"origin\": {\n      \"address\": \"Aeroporto Internacional de Guarulhos\",\n      \"city\": \"Guarulhos\",\n      \"date\": \"15/04/2026\",\n      \"time\": \"10:00\",\n      \"lat\": \"-23.4356\",\n      \"lng\": \"-46.4731\",\n      \"address_components\": {\n        \"state\": \"São Paulo\",\n        \"state_short\": \"SP\",\n        \"city\": \"Guarulhos\"\n      }\n    },\n    \"destination\": {\n      \"address\": \"Av. Paulista, 1000 - Bela Vista, São Paulo - SP\",\n      \"city\": \"São Paulo\",\n      \"date\": \"15/04/2026\",\n      \"time\": \"12:00\",\n      \"lat\": \"-23.5630\",\n      \"lng\": \"-46.6543\",\n      \"address_components\": {\n        \"state\": \"São Paulo\",\n        \"state_short\": \"SP\",\n        \"city\": \"São Paulo\"\n      }\n    }\n  },\n  \"selectedVehicle\": {\n    \"id\": \"abc123\",\n    \"name\": \"Ônibus Executivo\",\n    \"capacity\": 44,\n    \"priceCents\": 85000,\n    \"tenant_id\": \"tenant-uuid-aqui\"\n  }\n}"
+      },
+      "description": "Use os dados de origin/destination resolvidos pelo endpoint de busca.\nO campo default_margin_percentage (0–100) sobrescreve a margem padrão do sistema."
+    },
+    {
+      "_id": "req_quotes_show",
+      "_type": "request",
+      "name": "Ver Orçamento",
+      "parentId": "fld_quotes",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/quotes/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "fld_orders",
+      "_type": "request_group",
+      "name": "Pedidos",
+      "parentId": "wrk_partner_api",
+      "description": "Criação e consulta de pedidos"
+    },
+    {
+      "_id": "req_orders_list",
+      "_type": "request",
+      "name": "Listar Pedidos",
+      "parentId": "fld_orders",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/orders",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "parameters": [
+        { "name": "customer_id", "value": "" },
+        { "name": "status", "value": "", "description": "pending_invoice | invoiced | confirmed | in_progress | completed | cancelled" },
+        { "name": "date_from", "value": "" },
+        { "name": "date_to", "value": "" },
+        { "name": "page", "value": "1" }
+      ]
+    },
+    {
+      "_id": "req_orders_create",
+      "_type": "request",
+      "name": "Criar Pedido",
+      "parentId": "fld_orders",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/partner/v1/orders",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"quote_id\": 1\n}"
+      },
+      "description": "Converte um orçamento aprovado em pedido.\nO quote_id é o id retornado ao criar o orçamento."
+    },
+    {
+      "_id": "req_orders_show",
+      "_type": "request",
+      "name": "Ver Pedido",
+      "parentId": "fld_orders",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/orders/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "fld_services",
+      "_type": "request_group",
+      "name": "Serviços",
+      "parentId": "wrk_partner_api",
+      "description": "Serviços (itens de pedido) e dados operacionais"
+    },
+    {
+      "_id": "req_services_list",
+      "_type": "request",
+      "name": "Listar Serviços",
+      "parentId": "fld_services",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/services",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "parameters": [
+        { "name": "customer_id", "value": "" },
+        { "name": "status", "value": "", "description": "PROGRAMADO | CONFIRMADO | EM_EXECUCAO | CONCLUIDO | NAO_EXECUTADO" },
+        { "name": "date_from", "value": "" },
+        { "name": "date_to", "value": "" },
+        { "name": "page", "value": "1" }
+      ]
+    },
+    {
+      "_id": "req_services_show",
+      "_type": "request",
+      "name": "Ver Serviço",
+      "parentId": "fld_services",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/services/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_services_operational",
+      "_type": "request",
+      "name": "Dados Operacionais",
+      "parentId": "fld_services",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/services/1/operational",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "description": "Retorna: motorista(s), placa do veículo, passageiros e dados ANTT."
+    },
+    {
+      "_id": "req_services_passengers",
+      "_type": "request",
+      "name": "Atualizar Passageiros",
+      "parentId": "fld_services",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/partner/v1/services/1/passengers",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"passengers\": [\n    { \"name\": \"Maria Souza\", \"document\": \"123.456.789-00\" },\n    { \"name\": \"João Pereira\", \"document\": \"987.654.321-00\" },\n    { \"name\": \"Ana Lima\", \"document\": \"111.222.333-44\" }\n  ]\n}"
+      }
+    },
+    {
+      "_id": "fld_statements",
+      "_type": "request_group",
+      "name": "Extrato Financeiro",
+      "parentId": "wrk_partner_api",
+      "description": "Extrato de pedidos com margens"
+    },
+    {
+      "_id": "req_statements",
+      "_type": "request",
+      "name": "Consultar Extrato",
+      "parentId": "fld_statements",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/statements",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "parameters": [
+        { "name": "customer_id", "value": "" },
+        { "name": "partner_company_id", "value": "" },
+        { "name": "date_from", "value": "2026/01/01", "description": "YYYY/MM/DD" },
+        { "name": "date_to", "value": "2026/03/31", "description": "YYYY/MM/DD" },
+        { "name": "page", "value": "1" }
+      ],
+      "description": "Todos os valores monetários são retornados em centavos."
+    },
+    {
+      "_id": "fld_reports",
+      "_type": "request_group",
+      "name": "Relatórios",
+      "parentId": "wrk_partner_api",
+      "description": "Métricas agregadas do sistema"
+    },
+    {
+      "_id": "req_reports",
+      "_type": "request",
+      "name": "Métricas do Sistema",
+      "parentId": "fld_reports",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/reports",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "parameters": [
+        { "name": "date_from", "value": "", "description": "YYYY-MM-DD (opcional)" },
+        { "name": "date_to", "value": "", "description": "YYYY-MM-DD (opcional)" }
+      ],
+      "description": "Retorna: orders_count, orders_total_amount, orders_total_margin, quotes_count, customers_count, services_count."
+    },
+    {
+      "_id": "fld_settings",
+      "_type": "request_group",
+      "name": "Configurações",
+      "parentId": "wrk_partner_api"
+    },
+    {
+      "_id": "req_settings_show",
+      "_type": "request",
+      "name": "Ver Configurações",
+      "parentId": "fld_settings",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/settings",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_settings_update",
+      "_type": "request",
+      "name": "Atualizar Margem Padrão",
+      "parentId": "fld_settings",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/partner/v1/settings",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"default_margin_percentage\": 12.5\n}"
+      }
+    },
+    {
+      "_id": "fld_webhooks",
+      "_type": "request_group",
+      "name": "Webhooks",
+      "parentId": "wrk_partner_api",
+      "description": "Configure URLs para receber eventos em tempo real"
+    },
+    {
+      "_id": "req_webhooks_list",
+      "_type": "request",
+      "name": "Listar Webhooks",
+      "parentId": "fld_webhooks",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/partner/v1/webhooks",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    },
+    {
+      "_id": "req_webhooks_create",
+      "_type": "request",
+      "name": "Registrar Webhook",
+      "parentId": "fld_webhooks",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/partner/v1/webhooks",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"url\": \"https://meu-sistema.com.br/webhook/gds\",\n  \"events\": [\n    \"order_item.driver_assigned\",\n    \"order_item.vehicle_assigned\",\n    \"order_item.status_changed\",\n    \"order.status_changed\"\n  ],\n  \"active\": true\n}"
+      },
+      "description": "O secret HMAC-SHA256 é gerado automaticamente e retornado na resposta. Guarde-o para verificar a assinatura X-Signature dos eventos recebidos."
+    },
+    {
+      "_id": "req_webhooks_update",
+      "_type": "request",
+      "name": "Atualizar Webhook",
+      "parentId": "fld_webhooks",
+      "method": "PUT",
+      "url": "{{ _.base_url }}/api/partner/v1/webhooks/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"active\": false\n}"
+      }
+    },
+    {
+      "_id": "req_webhooks_delete",
+      "_type": "request",
+      "name": "Remover Webhook",
+      "parentId": "fld_webhooks",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/partner/v1/webhooks/1",
+      "headers": [
+        { "name": "Authorization", "value": "Bearer {{ _.api_key }}" },
+        { "name": "Accept", "value": "application/json" }
+      ]
+    }
+  ]
+}
