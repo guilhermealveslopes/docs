@@ -71,6 +71,32 @@
                     }
                 ]
             },{
+                "tab": "Partner API",
+                "groups": [
+                    {
+                        "group": "Início",
+                        "pages": [
+                            "partner/introduction",
+                            "partner/authentication",
+                            "partner/quickstart"
+                        ]
+                    },
+                    {
+                        "group": "Referência",
+                        "pages": [
+                            "partner/customers",
+                            "partner/search",
+                            "partner/quotes",
+                            "partner/orders",
+                            "partner/services",
+                            "partner/statements",
+                            "partner/reports",
+                            "partner/settings",
+                            "partner/webhooks"
+                        ]
+                    }
+                ]
+            },{
                 "tab": "Migração",
                 "groups": [
                     {

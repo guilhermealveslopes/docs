@@ -1,0 +1,229 @@
+---
+title: "Webhooks"
+description: "Receba eventos em tempo real no seu sistema"
+---
+
+Webhooks permitem que o GDS notifique o seu sistema automaticamente quando eventos importantes ocorrem, como mudancas de status de pedidos ou atribuicao de motorista. Voce registra uma URL e o GDS envia requisicoes HTTP POST para ela com os dados do evento.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `POST` | `/webhooks` | Registrar novo webhook |
+| `GET` | `/webhooks` | Listar webhooks cadastrados |
+| `GET` | `/webhooks/{id}` | Buscar webhook por ID |
+| `PUT` | `/webhooks/{id}` | Atualizar webhook |
+| `DELETE` | `/webhooks/{id}` | Remover webhook |
+
+---
+
+## Eventos disponiveis
+
+| Evento | Descricao |
+|--------|-----------|
+| `order.status_changed` | Status do pedido foi alterado |
+| `order_item.status_changed` | Status de um servico foi alterado |
+| `order_item.driver_assigned` | Motorista foi atribuido a um servico |
+| `order_item.vehicle_assigned` | Veiculo foi atribuido a um servico |
+
+---
+
+## Registrar webhook
+
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/webhooks \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://seu-sistema.com.br/webhooks/gds",
+    "events": [
+      "order.status_changed",
+      "order_item.driver_assigned",
+      "order_item.vehicle_assigned",
+      "order_item.status_changed"
+    ],
+    "secret": "seu_segredo_hmac_aleatorio"
+  }'
+```
+
+### Campos da requisicao
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `url` | string | Sim | URL HTTPS que recebera os eventos |
+| `events` | array | Sim | Lista de eventos para assinar |
+| `secret` | string | Sim | Segredo usado para assinar os payloads (HMAC-SHA256) |
+
+### Resposta
+
+```json
+{
+  "data": {
+    "id": "wh_01jk2m3n4p5q6r7s",
+    "url": "https://seu-sistema.com.br/webhooks/gds",
+    "events": ["order.status_changed", "order_item.driver_assigned"],
+    "active": true,
+    "created_at": "2026-03-06T14:00:00.000000Z"
+  }
+}
+```
+
+---
+
+## Estrutura do payload
+
+Quando um evento ocorre, o GDS envia uma requisicao `POST` para a URL cadastrada com o seguinte payload:
+
+```json
+{
+  "event": "order_item.driver_assigned",
+  "timestamp": "2026-04-14T18:30:00.000000Z",
+  "data": {
+    "order_id": "ord_01jk2m3n4p5q6r7s",
+    "order_item_id": "item_01jk2m3n4p5q6r7s",
+    "driver": {
+      "name": "Carlos Eduardo Santos",
+      "phone": "11988887777",
+      "document": "12345678901"
+    }
+  }
+}
+```
+
+### Campos do payload
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| `event` | string | Nome do evento que ocorreu |
+| `timestamp` | string | Data e hora do evento (ISO 8601 UTC) |
+| `data` | object | Dados do evento (varia por tipo de evento) |
+
+---
+
+## Verificacao de assinatura
+
+Cada requisicao de webhook inclui o header `X-Signature` com a assinatura HMAC-SHA256 do payload. **Voce deve verificar essa assinatura** para garantir que a requisicao veio do GDS e nao foi adulterada.
+
+### Como calcular a assinatura esperada
+
+```
+assinatura = HMAC-SHA256(payload_raw_bytes, seu_secret)
+```
+
+Compare o resultado (em hexadecimal) com o valor do header `X-Signature`.
+
+### Verificacao em Node.js
+
+```javascript
+const crypto = require('crypto');
+
+function verifyWebhookSignature(payload, signature, secret) {
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(payload, 'utf8')
+    .digest('hex');
+
+  // Comparacao segura contra timing attacks
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature, 'hex'),
+    Buffer.from(signature, 'hex')
+  );
+}
+
+// Exemplo de uso em Express.js
+app.post('/webhooks/gds', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-signature'];
+  const secret = process.env.GDS_WEBHOOK_SECRET;
+
+  if (!verifyWebhookSignature(req.body, signature, secret)) {
+    return res.status(401).json({ error: 'Assinatura invalida' });
+  }
+
+  const event = JSON.parse(req.body);
+  console.log('Evento recebido:', event.event);
+
+  // Processe o evento aqui
+  res.json({ received: true });
+});
+```
+
+### Verificacao em PHP
+
+```php
+<?php
+
+function verifyWebhookSignature(string $payload, string $signature, string $secret): bool
+{
+    $expectedSignature = hash_hmac('sha256', $payload, $secret);
+    return hash_equals($expectedSignature, $signature);
+}
+
+// Exemplo de uso em Laravel
+Route::post('/webhooks/gds', function (Request $request) {
+    $payload = $request->getContent();
+    $signature = $request->header('X-Signature');
+    $secret = config('services.gds.webhook_secret');
+
+    if (!verifyWebhookSignature($payload, $signature, $secret)) {
+        return response()->json(['error' => 'Assinatura invalida'], 401);
+    }
+
+    $event = json_decode($payload, true);
+    Log::info('GDS webhook recebido', ['event' => $event['event']]);
+
+    // Processe o evento aqui
+
+    return response()->json(['received' => true]);
+});
+```
+
+<Warning>
+  Sempre use `hash_equals` (PHP) ou `crypto.timingSafeEqual` (Node.js) para comparar assinaturas. Comparacoes diretas com `===` sao vulneraveis a timing attacks.
+</Warning>
+
+---
+
+## Retentativas
+
+O GDS reenvia o evento automaticamente em caso de falha (timeout ou status HTTP diferente de 2xx):
+
+| Tentativa | Intervalo |
+|-----------|-----------|
+| 1a | Imediata |
+| 2a | 1 minuto |
+| 3a | 5 minutos |
+| 4a | 30 minutos |
+| 5a | 2 horas |
+
+Apos 5 tentativas sem sucesso, o evento e marcado como falho e nao e mais reenviado.
+
+---
+
+## Gerenciamento de webhooks
+
+### Listar webhooks
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/webhooks \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Atualizar webhook
+
+```bash
+curl -X PUT https://gds.fretatech.com.br/api/partner/v1/webhooks/wh_01jk2m3n4p5q6r7s \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://novo-url.com.br/webhooks/gds",
+    "events": ["order.status_changed"],
+    "active": false
+  }'
+```
+
+### Remover webhook
+
+```bash
+curl -X DELETE https://gds.fretatech.com.br/api/partner/v1/webhooks/wh_01jk2m3n4p5q6r7s \
+  -H "Authorization: Bearer SEU_TOKEN"
+```

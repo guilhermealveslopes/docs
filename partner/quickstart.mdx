@@ -1,0 +1,217 @@
+---
+title: "Quickstart"
+description: "Faça sua primeira busca e crie um pedido em minutos"
+---
+
+Este guia mostra o fluxo completo da Partner API: desde a autenticação até a criação de um pedido de fretamento. Siga os passos na ordem indicada.
+
+<Steps>
+
+  <Step title="Obtenha seu token de acesso">
+    Autentique-se com suas credenciais GDS para obter o Bearer token:
+
+    ```bash
+    curl -X POST https://gds.fretatech.com.br/api/partner/v1/auth/token \
+      -H "Content-Type: application/json" \
+      -d '{
+        "email": "seu@email.com",
+        "password": "sua_senha"
+      }'
+    ```
+
+    Guarde o `token` retornado. Você precisará dele em todos os próximos passos.
+
+    ```json
+    {
+      "data": {
+        "token": "eyJ0eXAiOiJKV1Qi...",
+        "token_type": "Bearer",
+        "expires_at": "2026-04-06T00:00:00.000000Z"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Crie ou busque um cliente">
+    Crie o cliente que vai solicitar o fretamento. Use `integration_code` para vincular ao ID do seu sistema:
+
+    ```bash
+    curl -X POST https://gds.fretatech.com.br/api/partner/v1/customers \
+      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "name": "Empresa Exemplo Ltda",
+        "type": "company",
+        "document": "12345678000195",
+        "email": "contato@exemplo.com.br",
+        "phone": "11999990000",
+        "integration_code": "ERP-CLIENTE-001"
+      }'
+    ```
+
+    Anote o `id` do cliente criado — você precisará dele para criar o orçamento.
+
+    ```json
+    {
+      "data": {
+        "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+        "name": "Empresa Exemplo Ltda",
+        "type": "company",
+        "integration_code": "ERP-CLIENTE-001"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Inicie uma busca de veículos">
+    Busque veículos disponíveis para a rota e data desejadas. A busca é assíncrona e retorna um `search_id`:
+
+    ```bash
+    curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
+      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "origin": {
+          "description": "Aeroporto de Guarulhos, Guarulhos - SP",
+          "place_id": "ChIJx7...",
+          "lat": -23.4356,
+          "lng": -46.4731
+        },
+        "destination": {
+          "description": "Av. Paulista, 1000, São Paulo - SP",
+          "place_id": "ChIJy8...",
+          "lat": -23.5614,
+          "lng": -46.6565
+        },
+        "trip_date": "2026/04/15",
+        "trip_time": "10:00",
+        "trip_type": "onewaytrip",
+        "passengers": 40
+      }'
+    ```
+
+    ```json
+    {
+      "data": {
+        "search_id": "srch_01jk2m3n4p5q6r7s",
+        "status": "pending"
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Aguarde os resultados da busca (polling)">
+    A busca consulta fornecedores em tempo real. Faça polling no endpoint de resultados até o status ser `complete`:
+
+    ```bash
+    curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/srch_01jk2m3n4p5q6r7s/results" \
+      -H "Authorization: Bearer SEU_TOKEN"
+    ```
+
+    Quando `status` for `complete`, você terá a lista de veículos disponíveis:
+
+    ```json
+    {
+      "data": {
+        "search_id": "srch_01jk2m3n4p5q6r7s",
+        "status": "complete",
+        "vehicles": [
+          {
+            "id": "veh_abc123",
+            "name": "Ônibus Executivo 50 lugares",
+            "capacity": 50,
+            "type": "bus",
+            "price_cents": 180000,
+            "tenant_id": "tenant_xyz",
+            "tenant_name": "Viação Exemplo"
+          }
+        ]
+      }
+    }
+    ```
+
+    Anote o `id` do veículo desejado e o `search_id`.
+  </Step>
+
+  <Step title="Crie um orçamento">
+    Com o `search_id` e o `vehicle_id`, crie o orçamento para o cliente:
+
+    ```bash
+    curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
+      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customer_id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+        "search_id": "srch_01jk2m3n4p5q6r7s",
+        "vehicle_id": "veh_abc123",
+        "default_margin_percentage": 15
+      }'
+    ```
+
+    ```json
+    {
+      "data": {
+        "id": "qt_01jk2m3n4p5q6r7s",
+        "status": "open",
+        "total_cents": 207000,
+        "margin_percentage": 15,
+        "customer": {
+          "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+          "name": "Empresa Exemplo Ltda"
+        }
+      }
+    }
+    ```
+  </Step>
+
+  <Step title="Crie o pedido">
+    Confirme o orçamento convertendo-o em pedido:
+
+    ```bash
+    curl -X POST https://gds.fretatech.com.br/api/partner/v1/orders \
+      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "quote_id": "qt_01jk2m3n4p5q6r7s"
+      }'
+    ```
+
+    ```json
+    {
+      "data": {
+        "id": "ord_01jk2m3n4p5q6r7s",
+        "status": "pending_invoice",
+        "total_cents": 207000,
+        "quote_id": "qt_01jk2m3n4p5q6r7s",
+        "created_at": "2026-03-06T14:30:00.000000Z"
+      }
+    }
+    ```
+
+    O pedido é enviado automaticamente ao fornecedor. Acompanhe as atualizações via webhook.
+  </Step>
+
+  <Step title="Configure seu webhook para receber atualizações">
+    Registre uma URL no seu sistema para receber eventos em tempo real (motorista atribuído, status alterado, etc.):
+
+    ```bash
+    curl -X POST https://gds.fretatech.com.br/api/partner/v1/webhooks \
+      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "url": "https://seu-sistema.com.br/webhooks/gds",
+        "events": ["order.status_changed", "order_item.driver_assigned", "order_item.vehicle_assigned"],
+        "secret": "seu_segredo_hmac"
+      }'
+    ```
+
+    Veja a documentação de [Webhooks](/partner/webhooks) para detalhes sobre verificação de assinatura e lista de eventos disponíveis.
+  </Step>
+
+</Steps>
+
+## Proximos passos
+
+- Consulte a referencia completa de cada endpoint nas paginas desta secao
+- Configure [Webhooks](/partner/webhooks) para receber atualizacoes operacionais automaticamente
+- Veja [Extrato Financeiro](/partner/statements) para consultar margens e faturamento

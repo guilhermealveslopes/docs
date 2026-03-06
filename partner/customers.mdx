@@ -1,0 +1,169 @@
+---
+title: "Clientes"
+description: "Gerenciamento completo de clientes (TMCs e empresas)"
+---
+
+O endpoint de clientes permite criar, consultar e atualizar cadastros de pessoas fisicas (PF) e juridicas (PJ) no GDS. Use o campo `integration_code` para vincular cada cliente ao identificador correspondente no seu sistema.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `GET` | `/customers` | Listar clientes |
+| `POST` | `/customers` | Criar cliente |
+| `GET` | `/customers/{id}` | Buscar cliente por ID |
+| `PUT` | `/customers/{id}` | Atualizar cliente |
+| `DELETE` | `/customers/{id}` | Remover cliente (soft delete) |
+
+---
+
+## Listar clientes
+
+```bash
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/customers?type=company&search=exemplo" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Parametros de filtro
+
+| Parametro | Tipo | Descricao |
+|-----------|------|-----------|
+| `search` | string | Busca por nome, documento ou e-mail |
+| `type` | string | `individual` (PF) ou `company` (PJ) |
+| `integration_code` | string | Filtra pelo codigo de integracao do seu sistema |
+| `page` | integer | Numero da pagina (padrao: 1) |
+| `per_page` | integer | Itens por pagina (padrao: 15, maximo: 100) |
+
+### Resposta
+
+```json
+{
+  "data": [
+    {
+      "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+      "name": "Empresa Exemplo Ltda",
+      "type": "company",
+      "document": "12345678000195",
+      "email": "contato@exemplo.com.br",
+      "phone": "11999990000",
+      "integration_code": "ERP-CLIENTE-001",
+      "created_at": "2026-01-10T09:00:00.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 42
+  }
+}
+```
+
+---
+
+## Criar cliente
+
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/customers \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "João Silva",
+    "type": "individual",
+    "document": "12345678901",
+    "email": "joao.silva@email.com",
+    "phone": "11988887777",
+    "integration_code": "ERP-PF-00042"
+  }'
+```
+
+### Campos da requisicao
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `name` | string | Sim | Nome completo (PF) ou razao social (PJ) |
+| `type` | string | Sim | `individual` para PF, `company` para PJ |
+| `document` | string | Sim | CPF (PF) ou CNPJ (PJ), apenas digitos |
+| `email` | string | Nao | E-mail de contato |
+| `phone` | string | Nao | Telefone com DDD, apenas digitos |
+| `integration_code` | string | Nao | Identificador do cliente no seu sistema |
+
+### Diferenca entre tipos
+
+| Campo | PF (`individual`) | PJ (`company`) |
+|-------|-------------------|----------------|
+| `document` | CPF (11 digitos) | CNPJ (14 digitos) |
+| `name` | Nome completo | Razao social |
+
+### Resposta
+
+```json
+{
+  "data": {
+    "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+    "name": "João Silva",
+    "type": "individual",
+    "document": "12345678901",
+    "email": "joao.silva@email.com",
+    "phone": "11988887777",
+    "integration_code": "ERP-PF-00042",
+    "created_at": "2026-03-06T14:00:00.000000Z"
+  }
+}
+```
+
+---
+
+## Buscar cliente por ID
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/customers/01jk2m3n4p5q6r7s8t9u0vwxyz \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+---
+
+## Atualizar cliente
+
+Apenas os campos enviados serao atualizados (PATCH semantics via PUT):
+
+```bash
+curl -X PUT https://gds.fretatech.com.br/api/partner/v1/customers/01jk2m3n4p5q6r7s8t9u0vwxyz \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "novo.email@exemplo.com.br",
+    "phone": "11977776666"
+  }'
+```
+
+---
+
+## Remover cliente
+
+O cliente e removido com **soft delete** — os dados historicos sao preservados nos pedidos existentes.
+
+```bash
+curl -X DELETE https://gds.fretatech.com.br/api/partner/v1/customers/01jk2m3n4p5q6r7s8t9u0vwxyz \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+**Resposta:**
+
+```json
+{
+  "message": "Cliente removido com sucesso."
+}
+```
+
+---
+
+## O campo integration_code
+
+O `integration_code` e um identificador livre que voce define. Use-o para mapear clientes do GDS com registros no seu ERP ou sistema interno.
+
+Exemplos de uso:
+- `"ERP-12345"` — ID do cliente no seu ERP
+- `"TOTVS-CLI-9901"` — referencia de cliente no TOTVS
+- `"UUID-do-seu-sistema"` — qualquer identificador unico do seu sistema
+
+Voce pode buscar clientes diretamente pelo `integration_code` usando o filtro na listagem.

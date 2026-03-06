@@ -1,0 +1,82 @@
+---
+title: "Configuracoes"
+description: "Gerencie as configuracoes do sistema"
+---
+
+O endpoint de configuracoes permite consultar e atualizar os parametros globais da sua conta na Partner API. Atualmente, a configuracao disponivel e a margem padrao aplicada aos orcamentos.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `GET` | `/settings` | Consultar configuracoes atuais |
+| `PUT` | `/settings` | Atualizar configuracoes |
+
+---
+
+## Consultar configuracoes
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/settings \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Resposta
+
+```json
+{
+  "data": {
+    "default_margin_percentage": 15
+  }
+}
+```
+
+### Campos da resposta
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| `default_margin_percentage` | number | Percentual de margem aplicado automaticamente aos orcamentos quando nao informado explicitamente |
+
+---
+
+## Atualizar configuracoes
+
+```bash
+curl -X PUT https://gds.fretatech.com.br/api/partner/v1/settings \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "default_margin_percentage": 18
+  }'
+```
+
+### Campos da requisicao
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `default_margin_percentage` | number | Sim | Percentual de margem padrao (ex: `15` para 15%) |
+
+### Resposta
+
+```json
+{
+  "data": {
+    "default_margin_percentage": 18
+  },
+  "message": "Configuracoes atualizadas com sucesso."
+}
+```
+
+---
+
+## Como a margem padrao funciona
+
+A `default_margin_percentage` e usada automaticamente ao criar orcamentos quando o parametro `default_margin_percentage` nao e informado na requisicao `POST /quotes`.
+
+Exemplo de fluxo:
+
+1. Configuracao atual: `default_margin_percentage = 15`
+2. Criacao de orcamento **sem** informar margem → margem de 15% e aplicada
+3. Criacao de orcamento **com** `default_margin_percentage: 20` → margem de 20% e aplicada (sobrescreve o padrao)
+
+Isso permite flexibilidade: voce pode ter uma margem padrao global e sobrescreve-la pontualmente por orcamento.

@@ -1,0 +1,164 @@
+---
+title: "Orcamentos"
+description: "Crie e consulte orcamentos de fretamento"
+---
+
+Um orcamento (quote) e criado a partir dos resultados de uma busca de veiculos. Ele representa uma proposta de fretamento para um cliente, com o preco do fornecedor acrescido da margem configurada.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `POST` | `/quotes` | Criar orcamento |
+| `GET` | `/quotes` | Listar orcamentos |
+| `GET` | `/quotes/{id}` | Buscar orcamento por ID |
+
+---
+
+## Criar orcamento
+
+Para criar um orcamento, voce precisa do `search_id` e do `id` do veiculo escolhido nos resultados da busca.
+
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+    "search_id": "srch_01jk2m3n4p5q6r7s",
+    "vehicle_id": "veh_abc123",
+    "default_margin_percentage": 15
+  }'
+```
+
+### Campos da requisicao
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `customer_id` | string | Sim | ID do cliente no GDS |
+| `search_id` | string | Sim | ID da busca realizada |
+| `vehicle_id` | string | Sim | ID do veiculo escolhido nos resultados |
+| `default_margin_percentage` | number | Nao | Margem em percentual (ex: `15` para 15%). Se omitido, usa a margem padrao configurada na conta. |
+
+### Como a margem e aplicada
+
+O `price_cents` do veiculo e o valor bruto do fornecedor. O GDS aplica a margem sobre esse valor:
+
+```
+total_cents = price_cents * (1 + default_margin_percentage / 100)
+
+Exemplo: R$ 1.800,00 * 1,15 = R$ 2.070,00
+→ price_cents: 180000
+→ total_cents: 207000
+→ margin_value_cents: 27000
+```
+
+### Resposta
+
+```json
+{
+  "data": {
+    "id": "qt_01jk2m3n4p5q6r7s",
+    "status": "open",
+    "trip_type": "onewaytrip",
+    "trip_date": "2026/04/15",
+    "trip_time": "10:00",
+    "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+    "destination": "Av. Paulista, 1000, São Paulo - SP",
+    "passengers": 40,
+    "vehicle_name": "Ônibus Executivo 50 lugares",
+    "vehicle_capacity": 50,
+    "tenant_name": "Viação Exemplo",
+    "price_cents": 180000,
+    "margin_percentage": 15,
+    "margin_value_cents": 27000,
+    "total_cents": 207000,
+    "customer": {
+      "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+      "name": "Empresa Exemplo Ltda"
+    },
+    "created_at": "2026-03-06T14:30:00.000000Z"
+  }
+}
+```
+
+### Campos da resposta
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| `id` | string | ID do orcamento |
+| `status` | string | Status do orcamento (veja abaixo) |
+| `price_cents` | integer | Valor bruto do fornecedor em centavos |
+| `margin_percentage` | number | Percentual de margem aplicado |
+| `margin_value_cents` | integer | Valor absoluto da margem em centavos |
+| `total_cents` | integer | Valor total com margem em centavos |
+
+---
+
+## Status do orcamento
+
+| Status | Descricao |
+|--------|-----------|
+| `open` | Orcamento criado, aguardando aprovacao do cliente |
+| `approved` | Aprovado pelo cliente |
+| `rejected` | Recusado pelo cliente |
+| `converted` | Convertido em pedido |
+| `expired` | Prazo de validade expirado |
+
+---
+
+## Listar orcamentos
+
+```bash
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/quotes?status=open&customer_id=01jk2m..." \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Parametros de filtro
+
+| Parametro | Tipo | Descricao |
+|-----------|------|-----------|
+| `status` | string | Filtra por status do orcamento |
+| `customer_id` | string | Filtra por cliente |
+| `date_from` | string | Data inicial (`YYYY-MM-DD`) |
+| `date_to` | string | Data final (`YYYY-MM-DD`) |
+| `page` | integer | Numero da pagina |
+| `per_page` | integer | Itens por pagina (maximo: 100) |
+
+### Resposta
+
+```json
+{
+  "data": [
+    {
+      "id": "qt_01jk2m3n4p5q6r7s",
+      "status": "open",
+      "trip_date": "2026/04/15",
+      "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+      "destination": "Av. Paulista, 1000, São Paulo - SP",
+      "total_cents": 207000,
+      "customer": {
+        "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+        "name": "Empresa Exemplo Ltda"
+      },
+      "created_at": "2026-03-06T14:30:00.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 8
+  }
+}
+```
+
+---
+
+## Buscar orcamento por ID
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/quotes/qt_01jk2m3n4p5q6r7s \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+Retorna o objeto completo do orcamento, identico ao retorno da criacao.

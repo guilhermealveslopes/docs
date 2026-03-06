@@ -1,0 +1,155 @@
+---
+title: "Pedidos"
+description: "Converta orcamentos em pedidos e acompanhe o status"
+---
+
+Um pedido (order) e criado a partir de um orcamento aprovado. Ao criar o pedido, o GDS envia automaticamente a solicitacao para o fornecedor (tenant), que confirmara a disponibilidade e iniciara a operacao.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `POST` | `/orders` | Criar pedido a partir de orcamento |
+| `GET` | `/orders` | Listar pedidos |
+| `GET` | `/orders/{id}` | Buscar pedido por ID |
+
+---
+
+## Criar pedido
+
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/orders \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quote_id": "qt_01jk2m3n4p5q6r7s"
+  }'
+```
+
+### Campos da requisicao
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `quote_id` | string | Sim | ID do orcamento a ser convertido em pedido |
+
+<Note>
+  O orcamento deve estar com status `open` ou `approved` para ser convertido em pedido.
+</Note>
+
+### Resposta
+
+```json
+{
+  "data": {
+    "id": "ord_01jk2m3n4p5q6r7s",
+    "status": "pending_invoice",
+    "quote_id": "qt_01jk2m3n4p5q6r7s",
+    "trip_type": "onewaytrip",
+    "trip_date": "2026/04/15",
+    "trip_time": "10:00",
+    "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+    "destination": "Av. Paulista, 1000, São Paulo - SP",
+    "passengers": 40,
+    "vehicle_name": "Ônibus Executivo 50 lugares",
+    "tenant_name": "Viação Exemplo",
+    "price_cents": 180000,
+    "margin_percentage": 15,
+    "margin_value_cents": 27000,
+    "total_cents": 207000,
+    "customer": {
+      "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+      "name": "Empresa Exemplo Ltda"
+    },
+    "items": [
+      {
+        "id": "item_01jk2m3n4p5q6r7s",
+        "service_status": "scheduled",
+        "trip_date": "2026/04/15",
+        "trip_time": "10:00"
+      }
+    ],
+    "created_at": "2026-03-06T14:30:00.000000Z"
+  }
+}
+```
+
+---
+
+## Fluxo de status do pedido
+
+```
+pending_invoice → invoiced → confirmed → in_progress → completed
+                                    ↘
+                                   cancelled (qualquer etapa)
+```
+
+| Status | Descricao |
+|--------|-----------|
+| `pending_invoice` | Pedido criado, aguardando faturamento |
+| `invoiced` | Fatura emitida |
+| `confirmed` | Pagamento confirmado |
+| `in_progress` | Servico em execucao |
+| `completed` | Servico concluido com sucesso |
+| `cancelled` | Pedido cancelado |
+
+As mudancas de status sao notificadas via webhook (`order.status_changed`). Veja [Webhooks](/partner/webhooks).
+
+---
+
+## Listar pedidos
+
+```bash
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/orders?status=confirmed&date_from=2026-04-01" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Parametros de filtro
+
+| Parametro | Tipo | Descricao |
+|-----------|------|-----------|
+| `status` | string | Filtra por status do pedido |
+| `customer_id` | string | Filtra por cliente |
+| `date_from` | string | Data inicial de criacao (`YYYY-MM-DD`) |
+| `date_to` | string | Data final de criacao (`YYYY-MM-DD`) |
+| `trip_date_from` | string | Data inicial da viagem (`YYYY-MM-DD`) |
+| `trip_date_to` | string | Data final da viagem (`YYYY-MM-DD`) |
+| `page` | integer | Numero da pagina |
+| `per_page` | integer | Itens por pagina (maximo: 100) |
+
+### Resposta
+
+```json
+{
+  "data": [
+    {
+      "id": "ord_01jk2m3n4p5q6r7s",
+      "status": "confirmed",
+      "trip_date": "2026/04/15",
+      "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+      "destination": "Av. Paulista, 1000, São Paulo - SP",
+      "total_cents": 207000,
+      "customer": {
+        "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+        "name": "Empresa Exemplo Ltda"
+      },
+      "created_at": "2026-03-06T14:30:00.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 27
+  }
+}
+```
+
+---
+
+## Buscar pedido por ID
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/orders/ord_01jk2m3n4p5q6r7s \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+Retorna o objeto completo do pedido, incluindo o array `items` com os servicos vinculados. Use os IDs dos itens para consultar dados operacionais via endpoint de [Servicos](/partner/services).

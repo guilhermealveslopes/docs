@@ -1,0 +1,93 @@
+---
+title: "Autenticação"
+description: "Como autenticar suas requisições na Partner API"
+---
+
+A Partner API utiliza autenticação via **Bearer Token**. O token é obtido através de um endpoint de autenticação e deve ser incluído em todas as requisições subsequentes.
+
+## Fluxo de autenticação
+
+1. Faça uma requisição `POST /api/partner/v1/auth/token` com suas credenciais
+2. Receba o token de acesso na resposta
+3. Inclua o token no header `Authorization` de todas as requisições
+
+## Obter token
+
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/auth/token \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "seu@email.com",
+    "password": "sua_senha"
+  }'
+```
+
+**Resposta:**
+
+```json
+{
+  "data": {
+    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+    "token_type": "Bearer",
+    "expires_at": "2026-04-06T00:00:00.000000Z"
+  }
+}
+```
+
+### Campos da resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `token` | string | Token JWT a ser usado no header Authorization |
+| `token_type` | string | Sempre `"Bearer"` |
+| `expires_at` | string | Data e hora de expiração do token (ISO 8601) |
+
+## Usar o token nas requisições
+
+Inclua o token no header `Authorization` de todas as requisições:
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/customers \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Accept: application/json"
+```
+
+## Revogar token
+
+Para revogar o token atual (logout), faça uma requisição `POST` ao endpoint de revogação:
+
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/auth/logout \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Accept: application/json"
+```
+
+**Resposta:**
+
+```json
+{
+  "message": "Token revogado com sucesso."
+}
+```
+
+## Erros de autenticação
+
+Caso o token seja inválido, expirado ou ausente, a API retornará:
+
+```json
+{
+  "message": "Unauthenticated."
+}
+```
+
+Com o status HTTP `401 Unauthorized`.
+
+<Warning>
+  Mantenha seu token em segurança. Nunca exponha tokens em repositórios de código, logs ou ambientes públicos. Em caso de comprometimento, revogue imediatamente o token e gere um novo.
+</Warning>
+
+## Boas práticas
+
+- Armazene o token em variáveis de ambiente, nunca hardcoded no código
+- Implemente renovação automática antes da expiração (`expires_at`)
+- Use HTTPS em todas as requisições — requisições HTTP são rejeitadas

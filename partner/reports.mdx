@@ -1,0 +1,94 @@
+---
+title: "Relatorios"
+description: "Metricas e numeros do sistema"
+---
+
+O endpoint de relatorios retorna um resumo das principais metricas do sistema para o periodo informado. Use os filtros de data para recortar o periodo de analise.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `GET` | `/reports` | Obter metricas do sistema |
+
+---
+
+## Obter metricas
+
+```bash
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/reports?date_from=2026-01-01&date_to=2026-03-31" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Parametros de filtro
+
+| Parametro | Tipo | Obrigatorio | Descricao |
+|-----------|------|-------------|-----------|
+| `date_from` | string | Nao | Data inicial no formato `YYYY-MM-DD` |
+| `date_to` | string | Nao | Data final no formato `YYYY-MM-DD` |
+
+Se os parametros de data forem omitidos, o sistema retorna as metricas de todo o periodo disponivel.
+
+### Resposta
+
+```json
+{
+  "data": {
+    "period": {
+      "from": "2026-01-01",
+      "to": "2026-03-31"
+    },
+    "orders_count": 87,
+    "orders_total_amount_cents": 15420000,
+    "orders_total_margin_cents": 2163000,
+    "quotes_count": 134,
+    "customers_count": 52,
+    "services_count": 91
+  }
+}
+```
+
+### Campos da resposta
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| `period.from` | string | Data inicial do periodo consultado |
+| `period.to` | string | Data final do periodo consultado |
+| `orders_count` | integer | Numero total de pedidos no periodo |
+| `orders_total_amount_cents` | integer | Soma do valor total de todos os pedidos (centavos) |
+| `orders_total_margin_cents` | integer | Soma das margens de todos os pedidos (centavos) |
+| `quotes_count` | integer | Numero total de orcamentos criados no periodo |
+| `customers_count` | integer | Numero total de clientes ativos |
+| `services_count` | integer | Numero total de servicos (itens de pedido) no periodo |
+
+---
+
+## Exemplos de uso
+
+### Taxa de conversao de orcamentos
+
+```
+taxa_conversao = (orders_count / quotes_count) * 100
+
+Exemplo: (87 / 134) * 100 = 64,9%
+```
+
+### Margem media por pedido
+
+```
+margem_media = orders_total_margin_cents / orders_count
+
+Exemplo: 2.163.000 / 87 = 24.862 centavos = R$ 248,62
+```
+
+### Ticket medio
+
+```
+ticket_medio = orders_total_amount_cents / orders_count
+
+Exemplo: 15.420.000 / 87 = 177.241 centavos = R$ 1.772,41
+```
+
+<Note>
+  Todos os valores monetarios (`*_cents`) estao em centavos. Divida por 100 para converter para reais.
+</Note>

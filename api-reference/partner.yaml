@@ -1,0 +1,2869 @@
+openapi: 3.0.4
+info:
+  title: GDS Partner API
+  description: |-
+    API REST para integração de parceiros com o GDS (Global Distribution System) da Fretatech.
+
+    Permite que sistemas externos gerenciem clientes, realizem buscas de disponibilidade, criem orçamentos e pedidos, acompanhem serviços operacionais e configurem webhooks.
+
+    ## Valores Monetários
+
+    Todos os valores monetários são representados como **inteiros em centavos**.
+    Exemplos:
+    - R$ 500,00 → `50000`
+    - R$ 1.250,75 → `125075`
+    - R$ 10.000,00 → `1000000`
+
+    ## Autenticação
+
+    A maioria dos endpoints requer autenticação via **Bearer Token**.
+    Obtenha o token em `POST /api/partner/v1/auth/token` e inclua-o no cabeçalho:
+    ```
+    Authorization: Bearer {seu_token}
+    ```
+  contact:
+    email: ti@fretatech.com.br
+  version: 1.0.0
+servers:
+  - url: https://{subdomain}.fretatech.app.br
+    variables:
+      subdomain:
+        default: gds
+        description: Subdomínio do parceiro no sistema GDS
+
+tags:
+  - name: Autenticação
+    description: Geração e revogação de tokens de acesso
+  - name: Clientes
+    description: Gerenciamento de clientes (pessoa física e jurídica)
+  - name: Busca
+    description: Busca de disponibilidade de veículos
+  - name: Orçamentos
+    description: Criação e consulta de orçamentos
+  - name: Pedidos
+    description: Criação e acompanhamento de pedidos
+  - name: Serviços
+    description: Acompanhamento de serviços e dados operacionais
+  - name: Extrato
+    description: Extrato financeiro com margens e métricas
+  - name: Relatórios
+    description: Relatórios e métricas consolidadas do sistema
+  - name: Configurações
+    description: Configurações gerais da conta parceira
+  - name: Webhooks
+    description: Gerenciamento de webhooks para notificações em tempo real
+
+paths:
+
+  # ─────────────────────────────────────────────
+  # AUTENTICAÇÃO
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/auth/token:
+    post:
+      tags:
+        - Autenticação
+      summary: Gerar token de acesso
+      description: Autentica o parceiro com e-mail e senha e retorna um Bearer token para uso nas demais requisições.
+      operationId: authGenerateToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "parceiro@empresa.com.br"
+                  description: E-mail cadastrado na conta parceira
+                password:
+                  type: string
+                  format: password
+                  example: "MinhaS3nha@Segura"
+                  description: Senha da conta parceira
+      responses:
+        '200':
+          description: Token gerado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: "3|zXqT8kLmN2pRvW5yJdCfHaEbUoGsIiYnMxQe..."
+                    description: Bearer token para autenticação nas demais requisições
+                  token_type:
+                    type: string
+                    example: "Bearer"
+        '401':
+          description: Credenciais inválidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Autenticação
+      summary: Revogar token de acesso
+      description: Invalida o token de acesso atual. O token não poderá ser utilizado após esta operação.
+      operationId: authRevokeToken
+      responses:
+        '200':
+          description: Token revogado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Token revogado com sucesso"
+        '401':
+          description: Token inválido ou já revogado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # CLIENTES
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/customers:
+    get:
+      tags:
+        - Clientes
+      summary: Listar clientes
+      description: Retorna uma lista paginada de clientes. Suporta busca por nome, e-mail ou documento.
+      operationId: customersIndex
+      parameters:
+        - name: search
+          in: query
+          description: Busca por nome, e-mail ou documento (CPF/CNPJ)
+          required: false
+          schema:
+            type: string
+            example: "João Silva"
+        - name: type
+          in: query
+          description: Filtra por tipo de cliente
+          required: false
+          schema:
+            type: string
+            enum: [individual, company]
+            example: "individual"
+        - name: status
+          in: query
+          description: Filtra por status do cliente
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive]
+            example: "active"
+        - name: page
+          in: query
+          description: Número da página (padrão 1)
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 1
+      responses:
+        '200':
+          description: Lista de clientes retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CustomerObject'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+              example:
+                data:
+                  - id: 42
+                    uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                    name: "João da Silva Transportes Ltda"
+                    email: "joao@transportes.com.br"
+                    phone: "(11) 98765-4321"
+                    document: "12.345.678/0001-90"
+                    integration_code: "CLI-00042"
+                    margin_percentage: 15.00
+                    type: "company"
+                    active: true
+                    created_at: "2025-06-15T10:30:00-03:00"
+                meta:
+                  current_page: 1
+                  last_page: 5
+                  per_page: 15
+                  total: 72
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Clientes
+      summary: Criar cliente
+      description: Cria um novo cliente (pessoa física ou jurídica) na conta parceira.
+      operationId: customersStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+            example:
+              name: "Maria Aparecida Souza"
+              type: "individual"
+              email: "maria.souza@email.com.br"
+              phone: "(21) 99234-5678"
+              document: "123.456.789-00"
+              integration_code: "ERP-9981"
+              margin_percentage: 12.5
+              address_street: "Rua das Flores"
+              address_number: "123"
+              address_complement: "Apto 45"
+              address_district: "Jardim Botânico"
+              address_city: "Rio de Janeiro"
+              address_state: "RJ"
+              address_zipcode: "22460-040"
+      responses:
+        '201':
+          description: Cliente criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cliente criado com sucesso"
+                  data:
+                    $ref: '#/components/schemas/CustomerObject'
+        '422':
+          description: Dados inválidos ou cliente já existente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/customers/{id}:
+    get:
+      tags:
+        - Clientes
+      summary: Ver cliente
+      description: Retorna os dados completos de um cliente pelo ID.
+      operationId: customersShow
+      parameters:
+        - name: id
+          in: path
+          description: ID do cliente
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 42
+      responses:
+        '200':
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerObject'
+              example:
+                data:
+                  id: 42
+                  uuid: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  name: "João da Silva Transportes Ltda"
+                  email: "joao@transportes.com.br"
+                  phone: "(11) 98765-4321"
+                  document: "12.345.678/0001-90"
+                  integration_code: "CLI-00042"
+                  margin_percentage: 15.00
+                  type: "company"
+                  active: true
+                  created_at: "2025-06-15T10:30:00-03:00"
+        '404':
+          description: Cliente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    put:
+      tags:
+        - Clientes
+      summary: Atualizar cliente
+      description: Atualiza os dados de um cliente existente. Apenas os campos enviados serão atualizados.
+      operationId: customersUpdate
+      parameters:
+        - name: id
+          in: path
+          description: ID do cliente
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 42
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+            example:
+              phone: "(11) 97000-1234"
+              margin_percentage: 18.0
+              address_complement: "Sala 301"
+      responses:
+        '200':
+          description: Cliente atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Cliente atualizado com sucesso"
+                  data:
+                    $ref: '#/components/schemas/CustomerObject'
+        '404':
+          description: Cliente não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/customers/by-code/{integrationCode}:
+    get:
+      tags:
+        - Clientes
+      summary: Buscar cliente por código de integração
+      description: Localiza um cliente pelo código de integração com sistema externo (ERP, CRM, etc.).
+      operationId: customersByCode
+      parameters:
+        - name: integrationCode
+          in: path
+          description: Código de integração externo do cliente
+          required: true
+          schema:
+            type: string
+            example: "ERP-9981"
+      responses:
+        '200':
+          description: Cliente encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CustomerObject'
+        '404':
+          description: Nenhum cliente encontrado com este código
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # BUSCA
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/search:
+    post:
+      tags:
+        - Busca
+      summary: Iniciar busca de disponibilidade
+      description: |-
+        Inicia uma busca assíncrona de veículos disponíveis para uma rota e data.
+
+        A busca é processada em background. Use o `search_db_id` retornado para consultar
+        o resultado em `GET /api/partner/v1/search/{searchDbId}`.
+
+        **Tipos de viagem (`trip_type`):**
+        - `onewaytrip` — Viagem simples (somente ida)
+        - `roundtrip` — Ida e volta
+        - `hourtrip` — Fretamento por hora (com franquia de km)
+        - `customtrip` — Roteiro personalizado (múltiplos trechos)
+      operationId: searchCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - origin
+                - destination
+                - date
+                - trip_type
+              properties:
+                origin:
+                  type: object
+                  required:
+                    - address
+                    - lat
+                    - lng
+                  properties:
+                    address:
+                      type: string
+                      example: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+                      description: Endereço completo do ponto de origem
+                    lat:
+                      type: number
+                      format: double
+                      example: -23.5613587
+                      description: Latitude do ponto de origem
+                    lng:
+                      type: number
+                      format: double
+                      example: -46.6560878
+                      description: Longitude do ponto de origem
+                    city:
+                      type: string
+                      example: "São Paulo"
+                    state:
+                      type: string
+                      example: "SP"
+                destination:
+                  type: object
+                  required:
+                    - address
+                    - lat
+                    - lng
+                  properties:
+                    address:
+                      type: string
+                      example: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+                      description: Endereço completo do destino
+                    lat:
+                      type: number
+                      format: double
+                      example: -25.4284
+                      description: Latitude do destino
+                    lng:
+                      type: number
+                      format: double
+                      example: -49.2733
+                      description: Longitude do destino
+                    city:
+                      type: string
+                      example: "Curitiba"
+                    state:
+                      type: string
+                      example: "PR"
+                date:
+                  type: string
+                  format: date
+                  example: "2026-04-15"
+                  description: Data da viagem (formato YYYY-MM-DD)
+                return_date:
+                  type: string
+                  format: date
+                  example: "2026-04-17"
+                  description: Data de retorno (obrigatório para `roundtrip`)
+                trip_type:
+                  type: string
+                  enum: [onewaytrip, roundtrip, hourtrip, customtrip]
+                  example: "onewaytrip"
+                  description: Tipo de viagem
+                hours:
+                  type: integer
+                  example: 4
+                  description: Quantidade de horas (obrigatório para `hourtrip`)
+                passengers:
+                  type: integer
+                  example: 42
+                  description: Número estimado de passageiros (opcional, para filtragem por capacidade)
+      responses:
+        '202':
+          description: Busca iniciada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  search_db_id:
+                    type: string
+                    example: "srch_8f3a2b1c9d4e5f6a"
+                    description: Identificador da busca para consulta posterior
+                  status:
+                    type: string
+                    enum: [pending, complete, failed]
+                    example: "pending"
+              example:
+                search_db_id: "srch_8f3a2b1c9d4e5f6a"
+                status: "pending"
+        '422':
+          description: Dados de entrada inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/search/{searchDbId}:
+    get:
+      tags:
+        - Busca
+      summary: Consultar resultado da busca
+      description: |-
+        Consulta o resultado de uma busca iniciada anteriormente.
+
+        **Status possíveis:**
+        - `pending` — Busca ainda em processamento. Aguarde e consulte novamente.
+        - `complete` — Busca concluída. O array `vehicles` conterá os veículos disponíveis.
+        - `failed` — A busca falhou. Tente novamente ou entre em contato com o suporte.
+
+        Recomenda-se fazer polling a cada **2 segundos** enquanto o status for `pending`.
+      operationId: searchShow
+      parameters:
+        - name: searchDbId
+          in: path
+          description: Identificador da busca retornado em `POST /api/partner/v1/search`
+          required: true
+          schema:
+            type: string
+            example: "srch_8f3a2b1c9d4e5f6a"
+      responses:
+        '200':
+          description: Resultado da busca retornado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+              example:
+                search_db_id: "srch_8f3a2b1c9d4e5f6a"
+                status: "complete"
+                vehicles:
+                  - id: 101
+                    name: "Mercedes-Benz O-500 Executivo"
+                    capacity: 46
+                    type: "ônibus"
+                    price_cents: 320000
+                    tenant_id: 7
+                    tenant_name: "Viação Paulista Ltda"
+                  - id: 208
+                    name: "Volvo B270F Leito"
+                    capacity: 38
+                    type: "ônibus"
+                    price_cents: 485000
+                    tenant_id: 12
+                    tenant_name: "Trans Sul Fretamentos"
+        '404':
+          description: Busca não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # ORÇAMENTOS
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/quotes:
+    get:
+      tags:
+        - Orçamentos
+      summary: Listar orçamentos
+      description: Retorna uma lista paginada de orçamentos, com suporte a filtros por cliente, status e período.
+      operationId: quotesIndex
+      parameters:
+        - name: customer_id
+          in: query
+          description: Filtra por ID do cliente
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 42
+        - name: status
+          in: query
+          description: Filtra por status do orçamento
+          required: false
+          schema:
+            type: string
+            enum: [draft, sent, accepted, rejected, expired]
+            example: "sent"
+        - name: date_from
+          in: query
+          description: Data inicial do filtro de criação (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-01-01"
+        - name: date_to
+          in: query
+          description: Data final do filtro de criação (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-03-31"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 1
+      responses:
+        '200':
+          description: Lista de orçamentos retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/QuoteObject'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Orçamentos
+      summary: Criar orçamento
+      description: |-
+        Cria um novo orçamento para um cliente com um ou mais itens de viagem.
+
+        Cada item de viagem deve referenciar um veículo (`vehicle_id`) obtido da busca de disponibilidade.
+        A margem padrão da conta parceira é aplicada automaticamente, mas pode ser sobrescrita
+        por item ou globalmente nesta requisição via `default_margin_percentage`.
+      operationId: quotesStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_id
+                - items
+              properties:
+                customer_id:
+                  type: integer
+                  format: int64
+                  example: 42
+                  description: ID do cliente para o qual o orçamento é criado
+                default_margin_percentage:
+                  type: number
+                  format: double
+                  example: 15.0
+                  description: Margem percentual padrão a aplicar em todos os itens (sobrescreve a margem do cliente)
+                items:
+                  type: array
+                  minItems: 1
+                  description: Lista de itens de viagem do orçamento
+                  items:
+                    type: object
+                    required:
+                      - vehicle_id
+                      - origin
+                      - destination
+                      - date
+                      - trip_type
+                    properties:
+                      vehicle_id:
+                        type: integer
+                        format: int64
+                        example: 101
+                        description: ID do veículo obtido na busca de disponibilidade
+                      origin:
+                        type: string
+                        example: "Av. Paulista, 1578, São Paulo - SP"
+                      destination:
+                        type: string
+                        example: "Rua XV de Novembro, 1, Curitiba - PR"
+                      date:
+                        type: string
+                        format: date
+                        example: "2026-04-15"
+                      trip_type:
+                        type: string
+                        enum: [onewaytrip, roundtrip, hourtrip, customtrip]
+                        example: "onewaytrip"
+                      return_date:
+                        type: string
+                        format: date
+                        example: "2026-04-17"
+                        description: Data de retorno (obrigatório para `roundtrip`)
+                      margin_percentage:
+                        type: number
+                        format: double
+                        example: 20.0
+                        description: Margem percentual específica deste item (sobrescreve `default_margin_percentage`)
+                      notes:
+                        type: string
+                        example: "Embarque no portão principal"
+                        description: Observações internas sobre o item
+            example:
+              customer_id: 42
+              default_margin_percentage: 15.0
+              items:
+                - vehicle_id: 101
+                  origin: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+                  destination: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+                  date: "2026-04-15"
+                  trip_type: "onewaytrip"
+                  notes: "Embarque às 07:00"
+      responses:
+        '201':
+          description: Orçamento criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Orçamento criado com sucesso"
+                  data:
+                    $ref: '#/components/schemas/QuoteObject'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/quotes/{id}:
+    get:
+      tags:
+        - Orçamentos
+      summary: Ver orçamento
+      description: Retorna os dados completos de um orçamento, incluindo todos os itens e seus valores em centavos.
+      operationId: quotesShow
+      parameters:
+        - name: id
+          in: path
+          description: ID do orçamento
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 15
+      responses:
+        '200':
+          description: Orçamento encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/QuoteObject'
+              example:
+                data:
+                  id: 15
+                  customer_id: 42
+                  total: 368000
+                  margin_percentage: 15.0
+                  status: "sent"
+                  created_at: "2026-03-01T14:22:00-03:00"
+                  items:
+                    - id: 31
+                      vehicle_name: "Mercedes-Benz O-500 Executivo"
+                      trip_type: "onewaytrip"
+                      origin: "Av. Paulista, 1578, São Paulo - SP"
+                      destination: "Rua XV de Novembro, 1, Curitiba - PR"
+                      date: "2026-04-15"
+                      price_cents: 320000
+                      margin_value_cents: 48000
+                      total_cents: 368000
+        '404':
+          description: Orçamento não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # PEDIDOS
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/orders:
+    get:
+      tags:
+        - Pedidos
+      summary: Listar pedidos
+      description: Retorna uma lista paginada de pedidos, com suporte a filtros por cliente, status e período.
+      operationId: ordersIndex
+      parameters:
+        - name: customer_id
+          in: query
+          description: Filtra por ID do cliente
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 42
+        - name: status
+          in: query
+          description: Filtra por status do pedido
+          required: false
+          schema:
+            type: string
+            enum: [a_faturar, faturado, confirmado, em_execucao, concluido, cancelado]
+            example: "confirmado"
+        - name: date_from
+          in: query
+          description: Data inicial do filtro (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-01-01"
+        - name: date_to
+          in: query
+          description: Data final do filtro (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-03-31"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 1
+      responses:
+        '200':
+          description: Lista de pedidos retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderObject'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Pedidos
+      summary: Criar pedido
+      description: |-
+        Cria um novo pedido de fretamento. O pedido é enviado à Central Fretatech e em seguida
+        ao tenant (empresa de fretamento) correspondente para processamento operacional.
+
+        Pode ser criado a partir de um orçamento existente (via `quote_id`) ou diretamente
+        com os dados dos itens de viagem.
+
+        **Fluxo de status:** `A Faturar` → `Faturado` → `Confirmado` → `Em Execução` → `Concluído`
+      operationId: ordersStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customer_id
+                - items
+              properties:
+                customer_id:
+                  type: integer
+                  format: int64
+                  example: 42
+                  description: ID do cliente para o qual o pedido é criado
+                quote_id:
+                  type: integer
+                  format: int64
+                  example: 15
+                  description: ID do orçamento de origem (opcional — quando informado, os itens do orçamento são aproveitados)
+                items:
+                  type: array
+                  minItems: 1
+                  description: Itens de viagem do pedido
+                  items:
+                    type: object
+                    required:
+                      - vehicle_id
+                      - origin
+                      - destination
+                      - date
+                      - trip_type
+                    properties:
+                      vehicle_id:
+                        type: integer
+                        format: int64
+                        example: 101
+                      origin:
+                        type: object
+                        description: Dados de origem da viagem
+                        properties:
+                          address:
+                            type: string
+                            example: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+                          lat:
+                            type: number
+                            format: double
+                            example: -23.5613587
+                          lng:
+                            type: number
+                            format: double
+                            example: -46.6560878
+                          city:
+                            type: string
+                            example: "São Paulo"
+                          state:
+                            type: string
+                            example: "SP"
+                      destination:
+                        type: object
+                        description: Dados de destino da viagem
+                        properties:
+                          address:
+                            type: string
+                            example: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+                          lat:
+                            type: number
+                            format: double
+                            example: -25.4284
+                          lng:
+                            type: number
+                            format: double
+                            example: -49.2733
+                          city:
+                            type: string
+                            example: "Curitiba"
+                          state:
+                            type: string
+                            example: "PR"
+                      date:
+                        type: string
+                        format: date
+                        example: "2026-04-15"
+                      trip_type:
+                        type: string
+                        enum: [onewaytrip, roundtrip, hourtrip, customtrip]
+                        example: "onewaytrip"
+                      start_time:
+                        type: string
+                        example: "07:30"
+                        description: Horário de embarque (HH:MM)
+                      passengers:
+                        type: integer
+                        example: 42
+                        description: Número de passageiros
+                      margin_percentage:
+                        type: number
+                        format: double
+                        example: 15.0
+            example:
+              customer_id: 42
+              quote_id: 15
+              items:
+                - vehicle_id: 101
+                  origin:
+                    address: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+                    lat: -23.5613587
+                    lng: -46.6560878
+                    city: "São Paulo"
+                    state: "SP"
+                  destination:
+                    address: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+                    lat: -25.4284
+                    lng: -49.2733
+                    city: "Curitiba"
+                    state: "PR"
+                  date: "2026-04-15"
+                  trip_type: "onewaytrip"
+                  start_time: "07:30"
+                  passengers: 42
+                  margin_percentage: 15.0
+      responses:
+        '201':
+          description: Pedido criado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Pedido criado com sucesso"
+                  data:
+                    $ref: '#/components/schemas/OrderObject'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/orders/{id}:
+    get:
+      tags:
+        - Pedidos
+      summary: Ver pedido
+      description: Retorna os dados completos de um pedido, incluindo itens, valores em centavos e status atual.
+      operationId: ordersShow
+      parameters:
+        - name: id
+          in: path
+          description: ID do pedido
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 88
+      responses:
+        '200':
+          description: Pedido encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OrderObject'
+              example:
+                data:
+                  id: 88
+                  customer_id: 42
+                  total_amount: 368000
+                  margin_value: 48000
+                  status: "confirmado"
+                  created_at: "2026-03-05T09:15:00-03:00"
+                  items:
+                    - id: 77
+                      vehicle_name: "Mercedes-Benz O-500 Executivo"
+                      trip_type: "onewaytrip"
+                      origin_address: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+                      destination_address: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+                      date: "2026-04-15"
+                      total_amount: 368000
+                      status: "programado"
+        '404':
+          description: Pedido não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # SERVIÇOS
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/services:
+    get:
+      tags:
+        - Serviços
+      summary: Listar serviços
+      description: |-
+        Retorna uma lista paginada de serviços (itens de pedido em nível operacional).
+
+        **Fluxo de status do serviço:** `Programado` → `Confirmado` → `Em Execução` → `Concluído` / `Não Executado`
+      operationId: servicesIndex
+      parameters:
+        - name: customer_id
+          in: query
+          description: Filtra por ID do cliente
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 42
+        - name: status
+          in: query
+          description: Filtra por status do serviço
+          required: false
+          schema:
+            type: string
+            enum: [programado, confirmado, em_execucao, concluido, nao_executado]
+            example: "confirmado"
+        - name: date_from
+          in: query
+          description: Data inicial da viagem (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-04-01"
+        - name: date_to
+          in: query
+          description: Data final da viagem (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-04-30"
+        - name: partner_company_id
+          in: query
+          description: Filtra por ID da empresa parceira (tenant/viação)
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 7
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 1
+      responses:
+        '200':
+          description: Lista de serviços retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ServiceObject'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/services/{id}:
+    get:
+      tags:
+        - Serviços
+      summary: Ver serviço
+      description: Retorna os dados completos de um serviço, incluindo informações da viagem e status operacional atual.
+      operationId: servicesShow
+      parameters:
+        - name: id
+          in: path
+          description: ID do serviço
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 77
+      responses:
+        '200':
+          description: Serviço encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ServiceObject'
+              example:
+                data:
+                  id: 77
+                  uuid: "b9c8d7e6-f5a4-3210-9876-543210fedcba"
+                  vehicle_name: "Mercedes-Benz O-500 Executivo"
+                  status: "confirmado"
+                  start_date: "2026-04-15T07:30:00-03:00"
+                  end_date: "2026-04-15T18:00:00-03:00"
+                  origin_address: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+                  destination_address: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+                  total_amount: 368000
+        '404':
+          description: Serviço não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/services/{id}/operational:
+    get:
+      tags:
+        - Serviços
+      summary: Dados operacionais do serviço
+      description: |-
+        Retorna os dados operacionais de um serviço, incluindo motoristas designados,
+        lista de passageiros, placa do veículo e número ANTT.
+
+        Estas informações são preenchidas pela empresa de fretamento (tenant) à medida
+        que a operação avança, e chegam ao GDS via webhook.
+      operationId: servicesOperational
+      parameters:
+        - name: id
+          in: path
+          description: ID do serviço
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 77
+      responses:
+        '200':
+          description: Dados operacionais retornados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/OperationalData'
+              example:
+                data:
+                  vehicle_plate: "ABC-1D23"
+                  antt: "7654321-0"
+                  drivers:
+                    - name: "Carlos Roberto Mendes"
+                      document: "987.654.321-00"
+                      phone: "(11) 98001-2345"
+                      license: "98765432100"
+                      license_category: "D"
+                  passengers:
+                    - name: "Ana Paula Ferreira"
+                      document: "111.222.333-44"
+                    - name: "Roberto Alves Costa"
+                      document: "555.666.777-88"
+        '404':
+          description: Serviço não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/services/{id}/passengers:
+    put:
+      tags:
+        - Serviços
+      summary: Atualizar passageiros do serviço
+      description: |-
+        Atualiza a lista de passageiros de um serviço. A lista fornecida substitui
+        completamente a lista anterior.
+
+        Os dados são enviados à empresa de fretamento para fins de controle de embarque
+        e documentação de viagem (exigência ANTT).
+      operationId: servicesUpdatePassengers
+      parameters:
+        - name: id
+          in: path
+          description: ID do serviço
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 77
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - passengers
+              properties:
+                passengers:
+                  type: array
+                  minItems: 1
+                  description: Lista completa de passageiros (substitui a lista atual)
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                        example: "Ana Paula Ferreira"
+                        description: Nome completo do passageiro
+                      document:
+                        type: string
+                        example: "111.222.333-44"
+                        description: CPF ou RG do passageiro
+                      seat:
+                        type: string
+                        example: "12A"
+                        description: Número do assento (opcional)
+            example:
+              passengers:
+                - name: "Ana Paula Ferreira"
+                  document: "111.222.333-44"
+                  seat: "01"
+                - name: "Roberto Alves Costa"
+                  document: "555.666.777-88"
+                  seat: "02"
+                - name: "Fernanda Lima Pinto"
+                  document: "999.888.777-66"
+                  seat: "03"
+      responses:
+        '200':
+          description: Passageiros atualizados com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Passageiros atualizados com sucesso"
+                  total_passengers:
+                    type: integer
+                    example: 3
+        '404':
+          description: Serviço não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # EXTRATO
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/statements:
+    get:
+      tags:
+        - Extrato
+      summary: Extrato financeiro
+      description: |-
+        Retorna o extrato financeiro paginado com os pedidos e suas margens.
+        O objeto `meta` inclui estatísticas consolidadas do período filtrado.
+
+        Todos os valores (`total_amount`, `margin_value`, etc.) são inteiros em **centavos**.
+      operationId: statementsIndex
+      parameters:
+        - name: customer_id
+          in: query
+          description: Filtra por ID do cliente
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 42
+        - name: partner_company_id
+          in: query
+          description: Filtra por ID da empresa parceira (tenant)
+          required: false
+          schema:
+            type: integer
+            format: int64
+            example: 7
+        - name: date_from
+          in: query
+          description: Data inicial do extrato (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-01-01"
+        - name: date_to
+          in: query
+          description: Data final do extrato (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-03-31"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 1
+      responses:
+        '200':
+          description: Extrato retornado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderObject'
+                  meta:
+                    $ref: '#/components/schemas/StatsMeta'
+              example:
+                data:
+                  - id: 88
+                    customer_id: 42
+                    total_amount: 368000
+                    margin_value: 48000
+                    status: "concluido"
+                    created_at: "2026-03-05T09:15:00-03:00"
+                    items: []
+                  - id: 91
+                    customer_id: 42
+                    total_amount: 185000
+                    margin_value: 22200
+                    status: "concluido"
+                    created_at: "2026-03-12T11:00:00-03:00"
+                    items: []
+                meta:
+                  current_page: 1
+                  last_page: 3
+                  per_page: 15
+                  total: 32
+                  stats:
+                    total_revenue_cents: 12540000
+                    total_margin_cents: 1634000
+                    average_margin_percentage: 13.03
+                    total_orders: 32
+                    total_services: 41
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # RELATÓRIOS
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/reports:
+    get:
+      tags:
+        - Relatórios
+      summary: Métricas do sistema
+      description: |-
+        Retorna métricas consolidadas do sistema para o período informado.
+        Útil para dashboards e visões gerenciais.
+
+        Todos os valores monetários são inteiros em **centavos**.
+      operationId: reportsIndex
+      parameters:
+        - name: date_from
+          in: query
+          description: Data inicial do período (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-01-01"
+        - name: date_to
+          in: query
+          description: Data final do período (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-03-31"
+      responses:
+        '200':
+          description: Métricas retornadas com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  period:
+                    type: object
+                    properties:
+                      from:
+                        type: string
+                        format: date
+                        example: "2026-01-01"
+                      to:
+                        type: string
+                        format: date
+                        example: "2026-03-31"
+                  orders:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 87
+                        description: Total de pedidos no período
+                      by_status:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                        example:
+                          a_faturar: 3
+                          faturado: 8
+                          confirmado: 21
+                          em_execucao: 5
+                          concluido: 48
+                          cancelado: 2
+                  services:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 112
+                      by_status:
+                        type: object
+                        additionalProperties:
+                          type: integer
+                        example:
+                          programado: 25
+                          confirmado: 18
+                          em_execucao: 7
+                          concluido: 59
+                          nao_executado: 3
+                  financials:
+                    type: object
+                    properties:
+                      total_revenue_cents:
+                        type: integer
+                        example: 34750000
+                        description: Receita total em centavos
+                      total_margin_cents:
+                        type: integer
+                        example: 4530000
+                        description: Margem total em centavos
+                      average_margin_percentage:
+                        type: number
+                        format: double
+                        example: 13.04
+                  customers:
+                    type: object
+                    properties:
+                      total_active:
+                        type: integer
+                        example: 63
+                        description: Total de clientes ativos
+                      new_in_period:
+                        type: integer
+                        example: 11
+                        description: Novos clientes cadastrados no período
+              example:
+                period:
+                  from: "2026-01-01"
+                  to: "2026-03-31"
+                orders:
+                  total: 87
+                  by_status:
+                    a_faturar: 3
+                    faturado: 8
+                    confirmado: 21
+                    em_execucao: 5
+                    concluido: 48
+                    cancelado: 2
+                services:
+                  total: 112
+                  by_status:
+                    programado: 25
+                    confirmado: 18
+                    em_execucao: 7
+                    concluido: 59
+                    nao_executado: 3
+                financials:
+                  total_revenue_cents: 34750000
+                  total_margin_cents: 4530000
+                  average_margin_percentage: 13.04
+                customers:
+                  total_active: 63
+                  new_in_period: 11
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # CONFIGURAÇÕES
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/settings:
+    get:
+      tags:
+        - Configurações
+      summary: Ver configurações
+      description: Retorna as configurações atuais da conta parceira.
+      operationId: settingsShow
+      responses:
+        '200':
+          description: Configurações retornadas com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      default_margin_percentage:
+                        type: number
+                        format: double
+                        example: 15.0
+                        description: Margem percentual padrão aplicada a todos os orçamentos/pedidos
+                      company_name:
+                        type: string
+                        example: "Viagens Corporativas SP Ltda"
+                      timezone:
+                        type: string
+                        example: "America/Sao_Paulo"
+                      currency:
+                        type: string
+                        example: "BRL"
+              example:
+                data:
+                  default_margin_percentage: 15.0
+                  company_name: "Viagens Corporativas SP Ltda"
+                  timezone: "America/Sao_Paulo"
+                  currency: "BRL"
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    put:
+      tags:
+        - Configurações
+      summary: Atualizar configurações
+      description: Atualiza as configurações da conta parceira. Apenas os campos enviados serão modificados.
+      operationId: settingsUpdate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                default_margin_percentage:
+                  type: number
+                  format: double
+                  example: 18.0
+                  minimum: 0
+                  maximum: 100
+                  description: Nova margem percentual padrão (0 a 100)
+            example:
+              default_margin_percentage: 18.0
+      responses:
+        '200':
+          description: Configurações atualizadas com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Configurações atualizadas com sucesso"
+                  data:
+                    type: object
+                    properties:
+                      default_margin_percentage:
+                        type: number
+                        format: double
+                        example: 18.0
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  # ─────────────────────────────────────────────
+  # WEBHOOKS
+  # ─────────────────────────────────────────────
+
+  /api/partner/v1/webhooks:
+    get:
+      tags:
+        - Webhooks
+      summary: Listar webhooks configurados
+      description: |-
+        Retorna todos os webhooks registrados na conta parceira.
+
+        **Eventos disponíveis:**
+        - `order.created` — Novo pedido criado
+        - `order.status_changed` — Status do pedido alterado
+        - `service.status_changed` — Status do serviço alterado
+        - `service.operational_updated` — Dados operacionais atualizados (motorista, placa, ANTT)
+        - `service.passengers_updated` — Lista de passageiros atualizada
+        - `quote.created` — Novo orçamento criado
+        - `quote.accepted` — Orçamento aceito pelo cliente
+        - `quote.rejected` — Orçamento recusado pelo cliente
+      operationId: webhooksIndex
+      responses:
+        '200':
+          description: Lista de webhooks retornada com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WebhookObject'
+              example:
+                data:
+                  - id: 3
+                    url: "https://erp.empresa.com.br/webhooks/gds"
+                    events:
+                      - "order.created"
+                      - "order.status_changed"
+                      - "service.operational_updated"
+                    active: true
+                    created_at: "2026-01-10T08:00:00-03:00"
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    post:
+      tags:
+        - Webhooks
+      summary: Registrar webhook
+      description: |-
+        Registra um novo endpoint de webhook para receber notificações de eventos.
+
+        O GDS enviará um `POST` para a URL configurada com o payload do evento em formato JSON.
+        Recomenda-se que o endpoint retorne HTTP 200 em até **5 segundos**; caso contrário,
+        o GDS tentará reenviar o evento automaticamente.
+      operationId: webhooksStore
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+                - events
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: "https://erp.empresa.com.br/webhooks/gds"
+                  description: URL pública que receberá os eventos via POST
+                events:
+                  type: array
+                  minItems: 1
+                  description: Lista de eventos que acionarão este webhook
+                  items:
+                    type: string
+                    enum:
+                      - order.created
+                      - order.status_changed
+                      - service.status_changed
+                      - service.operational_updated
+                      - service.passengers_updated
+                      - quote.created
+                      - quote.accepted
+                      - quote.rejected
+                  example:
+                    - "order.created"
+                    - "order.status_changed"
+                    - "service.operational_updated"
+                active:
+                  type: boolean
+                  example: true
+                  default: true
+                  description: Se o webhook está ativo. Webhooks inativos não recebem eventos.
+                secret:
+                  type: string
+                  example: "meu_segredo_para_validar_assinatura"
+                  description: Chave secreta para validação da assinatura HMAC do payload (opcional, mas recomendado)
+            example:
+              url: "https://erp.empresa.com.br/webhooks/gds"
+              events:
+                - "order.created"
+                - "order.status_changed"
+                - "service.operational_updated"
+              active: true
+              secret: "meu_segredo_para_validar_assinatura"
+      responses:
+        '201':
+          description: Webhook registrado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Webhook registrado com sucesso"
+                  data:
+                    $ref: '#/components/schemas/WebhookObject'
+        '422':
+          description: Dados inválidos ou URL inacessível
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+  /api/partner/v1/webhooks/{id}:
+    put:
+      tags:
+        - Webhooks
+      summary: Atualizar webhook
+      description: Atualiza a URL, eventos ou status de ativo de um webhook existente.
+      operationId: webhooksUpdate
+      parameters:
+        - name: id
+          in: path
+          description: ID do webhook
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: "https://erp.empresa.com.br/webhooks/gds-v2"
+                events:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - order.created
+                      - order.status_changed
+                      - service.status_changed
+                      - service.operational_updated
+                      - service.passengers_updated
+                      - quote.created
+                      - quote.accepted
+                      - quote.rejected
+                  example:
+                    - "order.created"
+                    - "service.status_changed"
+                active:
+                  type: boolean
+                  example: false
+            example:
+              active: false
+      responses:
+        '200':
+          description: Webhook atualizado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Webhook atualizado com sucesso"
+                  data:
+                    $ref: '#/components/schemas/WebhookObject'
+        '404':
+          description: Webhook não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Dados inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+    delete:
+      tags:
+        - Webhooks
+      summary: Remover webhook
+      description: Remove permanentemente um webhook registrado. Esta ação não pode ser desfeita.
+      operationId: webhooksDestroy
+      parameters:
+        - name: id
+          in: path
+          description: ID do webhook
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 3
+      responses:
+        '200':
+          description: Webhook removido com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Webhook removido com sucesso"
+        '404':
+          description: Webhook não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          description: Erro inesperado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      security:
+        - bearerAuth: []
+
+# ─────────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────────
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token obtido em `POST /api/partner/v1/auth/token`
+
+  schemas:
+
+    CustomerObject:
+      type: object
+      description: Representa um cliente cadastrado na conta parceira.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+          description: Identificador único interno
+        uuid:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+          description: Identificador único global (UUID v4)
+        name:
+          type: string
+          example: "João da Silva Transportes Ltda"
+          description: Nome completo ou razão social
+        email:
+          type: string
+          format: email
+          example: "joao@transportes.com.br"
+          nullable: true
+        phone:
+          type: string
+          example: "(11) 98765-4321"
+          nullable: true
+        document:
+          type: string
+          example: "12.345.678/0001-90"
+          nullable: true
+          description: CPF (pessoa física) ou CNPJ (pessoa jurídica)
+        integration_code:
+          type: string
+          example: "CLI-00042"
+          nullable: true
+          description: Código de integração com sistema externo (ERP, CRM, etc.)
+        margin_percentage:
+          type: number
+          format: double
+          example: 15.0
+          nullable: true
+          description: Margem percentual específica deste cliente. Se nulo, usa a margem padrão da conta.
+        type:
+          type: string
+          enum: [individual, company]
+          example: "company"
+          description: "`individual` = Pessoa Física | `company` = Pessoa Jurídica"
+        active:
+          type: boolean
+          example: true
+          description: Indica se o cliente está ativo
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-06-15T10:30:00-03:00"
+
+    CustomerInput:
+      type: object
+      description: Dados para criação ou atualização de um cliente.
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          example: "Maria Aparecida Souza"
+          description: Nome completo ou razão social
+        type:
+          type: string
+          enum: [individual, company]
+          example: "individual"
+          description: Tipo de pessoa (`individual` = PF, `company` = PJ)
+        email:
+          type: string
+          format: email
+          example: "maria.souza@email.com.br"
+          nullable: true
+        phone:
+          type: string
+          example: "(21) 99234-5678"
+          nullable: true
+        document:
+          type: string
+          example: "123.456.789-00"
+          nullable: true
+          description: CPF (PF) ou CNPJ (PJ), com ou sem formatação
+        integration_code:
+          type: string
+          example: "ERP-9981"
+          nullable: true
+          description: Código do cliente no sistema de origem (ERP, CRM, etc.)
+        margin_percentage:
+          type: number
+          format: double
+          example: 12.5
+          nullable: true
+          description: Margem percentual específica (0 a 100). Se omitido, usa o padrão da conta.
+        active:
+          type: boolean
+          example: true
+          description: Status do cliente (padrão `true`)
+        address_street:
+          type: string
+          example: "Rua das Flores"
+          nullable: true
+        address_number:
+          type: string
+          example: "123"
+          nullable: true
+        address_complement:
+          type: string
+          example: "Apto 45"
+          nullable: true
+        address_district:
+          type: string
+          example: "Jardim Botânico"
+          nullable: true
+          description: Bairro
+        address_city:
+          type: string
+          example: "Rio de Janeiro"
+          nullable: true
+        address_state:
+          type: string
+          example: "RJ"
+          nullable: true
+          description: Sigla do estado (UF)
+        address_zipcode:
+          type: string
+          example: "22460-040"
+          nullable: true
+          description: CEP, com ou sem hífen
+
+    VehicleResult:
+      type: object
+      description: Veículo disponível retornado pela busca de disponibilidade.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 101
+          description: ID do veículo na frota do tenant
+        name:
+          type: string
+          example: "Mercedes-Benz O-500 Executivo"
+          description: Nome ou modelo do veículo
+        capacity:
+          type: integer
+          format: int32
+          example: 46
+          description: Capacidade de passageiros
+        type:
+          type: string
+          example: "ônibus"
+          description: Tipo de veículo (ônibus, micro-ônibus, van, etc.)
+        price_cents:
+          type: integer
+          format: int64
+          example: 320000
+          description: Preço do frete em **centavos** (R$ 3.200,00 = 320000)
+        tenant_id:
+          type: integer
+          format: int64
+          example: 7
+          description: ID da empresa de fretamento (tenant) proprietária do veículo
+        tenant_name:
+          type: string
+          example: "Viação Paulista Ltda"
+          description: Nome da empresa de fretamento
+
+    SearchResponse:
+      type: object
+      description: Resultado de uma busca de disponibilidade.
+      properties:
+        search_db_id:
+          type: string
+          example: "srch_8f3a2b1c9d4e5f6a"
+          description: Identificador único da busca
+        status:
+          type: string
+          enum: [pending, complete, failed]
+          example: "complete"
+          description: |
+            Status atual da busca:
+            - `pending` — ainda processando (consulte novamente em ~2s)
+            - `complete` — finalizada com sucesso
+            - `failed` — falhou
+        vehicles:
+          type: array
+          description: Veículos disponíveis (presente apenas quando `status` = `complete`)
+          items:
+            $ref: '#/components/schemas/VehicleResult'
+
+    QuoteObject:
+      type: object
+      description: Representa um orçamento. Todos os valores monetários são inteiros em centavos.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 15
+        customer_id:
+          type: integer
+          format: int64
+          example: 42
+        total:
+          type: integer
+          format: int64
+          example: 368000
+          description: Valor total do orçamento em **centavos** (inclui margem)
+        margin_percentage:
+          type: number
+          format: double
+          example: 15.0
+          description: Margem percentual aplicada
+        status:
+          type: string
+          enum: [draft, sent, accepted, rejected, expired]
+          example: "sent"
+          description: |
+            Status do orçamento:
+            - `draft` — rascunho
+            - `sent` — enviado ao cliente
+            - `accepted` — aceito
+            - `rejected` — recusado
+            - `expired` — expirado
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+                example: 31
+              vehicle_name:
+                type: string
+                example: "Mercedes-Benz O-500 Executivo"
+              trip_type:
+                type: string
+                example: "onewaytrip"
+              origin:
+                type: string
+                example: "Av. Paulista, 1578, São Paulo - SP"
+              destination:
+                type: string
+                example: "Rua XV de Novembro, 1, Curitiba - PR"
+              date:
+                type: string
+                format: date
+                example: "2026-04-15"
+              price_cents:
+                type: integer
+                format: int64
+                example: 320000
+                description: Preço base do fornecedor em centavos
+              margin_value_cents:
+                type: integer
+                format: int64
+                example: 48000
+                description: Valor da margem em centavos
+              total_cents:
+                type: integer
+                format: int64
+                example: 368000
+                description: Total do item (preço + margem) em centavos
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-03-01T14:22:00-03:00"
+
+    OrderObject:
+      type: object
+      description: Representa um pedido de fretamento. Todos os valores monetários são inteiros em centavos.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 88
+        customer_id:
+          type: integer
+          format: int64
+          example: 42
+        total_amount:
+          type: integer
+          format: int64
+          example: 368000
+          description: Valor total do pedido em **centavos** (inclui margem)
+        margin_value:
+          type: integer
+          format: int64
+          example: 48000
+          description: Valor total da margem em **centavos**
+        status:
+          type: string
+          enum: [a_faturar, faturado, confirmado, em_execucao, concluido, cancelado]
+          example: "confirmado"
+          description: |
+            Status do pedido:
+            - `a_faturar` — aguardando faturamento
+            - `faturado` — faturado
+            - `confirmado` — confirmado e pago
+            - `em_execucao` — viagem em andamento
+            - `concluido` — serviço concluído
+            - `cancelado` — cancelado
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+                example: 77
+              vehicle_name:
+                type: string
+                example: "Mercedes-Benz O-500 Executivo"
+              trip_type:
+                type: string
+                example: "onewaytrip"
+              origin_address:
+                type: string
+                example: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+              destination_address:
+                type: string
+                example: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+              date:
+                type: string
+                format: date
+                example: "2026-04-15"
+              total_amount:
+                type: integer
+                format: int64
+                example: 368000
+                description: Valor do item em centavos
+              status:
+                type: string
+                example: "programado"
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-03-05T09:15:00-03:00"
+
+    ServiceObject:
+      type: object
+      description: Representa um serviço operacional (item de pedido em execução).
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 77
+        uuid:
+          type: string
+          format: uuid
+          example: "b9c8d7e6-f5a4-3210-9876-543210fedcba"
+          description: Identificador único global para rastreamento cross-system (GDS / Central / Tenant)
+        vehicle_name:
+          type: string
+          example: "Mercedes-Benz O-500 Executivo"
+        status:
+          type: string
+          enum: [programado, confirmado, em_execucao, concluido, nao_executado]
+          example: "confirmado"
+          description: |
+            Status operacional do serviço:
+            - `programado` — agendado, aguardando confirmação
+            - `confirmado` — confirmado pela viação
+            - `em_execucao` — viagem em andamento
+            - `concluido` — serviço concluído com sucesso
+            - `nao_executado` — serviço não realizado
+        start_date:
+          type: string
+          format: date-time
+          example: "2026-04-15T07:30:00-03:00"
+          description: Data/hora de início da viagem
+        end_date:
+          type: string
+          format: date-time
+          example: "2026-04-15T18:00:00-03:00"
+          nullable: true
+          description: Data/hora de término da viagem (estimada ou real)
+        origin_address:
+          type: string
+          example: "Av. Paulista, 1578, Bela Vista, São Paulo - SP"
+        destination_address:
+          type: string
+          example: "Rua XV de Novembro, 1, Centro, Curitiba - PR"
+        total_amount:
+          type: integer
+          format: int64
+          example: 368000
+          description: Valor do serviço em **centavos**
+
+    OperationalData:
+      type: object
+      description: Dados operacionais de um serviço (motoristas, passageiros, veículo, ANTT).
+      properties:
+        vehicle_plate:
+          type: string
+          example: "ABC-1D23"
+          nullable: true
+          description: Placa do veículo designado para o serviço
+        antt:
+          type: string
+          example: "7654321-0"
+          nullable: true
+          description: Registro ANTT do veículo
+        drivers:
+          type: array
+          nullable: true
+          description: Motoristas designados para o serviço
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Carlos Roberto Mendes"
+              document:
+                type: string
+                example: "987.654.321-00"
+                description: CPF do motorista
+              phone:
+                type: string
+                example: "(11) 98001-2345"
+                nullable: true
+              license:
+                type: string
+                example: "98765432100"
+                description: Número da CNH
+                nullable: true
+              license_category:
+                type: string
+                example: "D"
+                description: Categoria da CNH
+                nullable: true
+        passengers:
+          type: array
+          nullable: true
+          description: Lista de passageiros embarcados/previstos
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "Ana Paula Ferreira"
+              document:
+                type: string
+                example: "111.222.333-44"
+                nullable: true
+                description: CPF ou RG do passageiro
+              seat:
+                type: string
+                example: "01"
+                nullable: true
+                description: Número do assento
+
+    WebhookObject:
+      type: object
+      description: Representa um webhook configurado para receber notificações de eventos.
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 3
+        url:
+          type: string
+          format: uri
+          example: "https://erp.empresa.com.br/webhooks/gds"
+          description: URL que recebe os eventos via POST
+        events:
+          type: array
+          description: Lista de eventos monitorados por este webhook
+          items:
+            type: string
+          example:
+            - "order.created"
+            - "order.status_changed"
+            - "service.operational_updated"
+        active:
+          type: boolean
+          example: true
+          description: Indica se o webhook está ativo e recebendo eventos
+        created_at:
+          type: string
+          format: date-time
+          example: "2026-01-10T08:00:00-03:00"
+
+    ErrorResponse:
+      type: object
+      description: Resposta de erro padrão da API.
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Recurso não encontrado"
+
+    PaginationMeta:
+      type: object
+      description: Metadados de paginação retornados nas listagens.
+      properties:
+        current_page:
+          type: integer
+          format: int32
+          example: 1
+          description: Número da página atual
+        last_page:
+          type: integer
+          format: int32
+          example: 5
+          description: Número da última página disponível
+        per_page:
+          type: integer
+          format: int32
+          example: 15
+          description: Quantidade de itens por página
+        total:
+          type: integer
+          format: int32
+          example: 72
+          description: Total de itens em todas as páginas
+
+    StatsMeta:
+      type: object
+      description: Metadados de paginação com estatísticas financeiras consolidadas.
+      allOf:
+        - $ref: '#/components/schemas/PaginationMeta'
+        - type: object
+          properties:
+            stats:
+              type: object
+              description: Estatísticas financeiras do período/filtro aplicado
+              properties:
+                total_revenue_cents:
+                  type: integer
+                  format: int64
+                  example: 12540000
+                  description: Receita total em **centavos** (R$ 125.400,00 = 12540000)
+                total_margin_cents:
+                  type: integer
+                  format: int64
+                  example: 1634000
+                  description: Margem total em **centavos**
+                average_margin_percentage:
+                  type: number
+                  format: double
+                  example: 13.03
+                  description: Margem média percentual
+                total_orders:
+                  type: integer
+                  format: int32
+                  example: 32
+                  description: Total de pedidos no período/filtro
+                total_services:
+                  type: integer
+                  format: int32
+                  example: 41
+                  description: Total de serviços no período/filtro

@@ -1,0 +1,188 @@
+---
+title: "Servicos"
+description: "Acompanhe servicos e dados operacionais"
+---
+
+Um servico (service) corresponde a um item do pedido (order item) — cada trecho ou viagem dentro de um pedido gera um servico. Por aqui voce acessa os dados operacionais: motorista atribuido, placa do veiculo, lista de passageiros e documentacao ANTT.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `GET` | `/services` | Listar servicos |
+| `GET` | `/services/{id}` | Buscar servico por ID |
+| `GET` | `/services/{id}/operational` | Dados operacionais do servico |
+| `PUT` | `/services/{id}/passengers` | Atualizar lista de passageiros |
+
+---
+
+## Listar servicos
+
+```bash
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/services?status=confirmed&date_from=2026-04-01" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Parametros de filtro
+
+| Parametro | Tipo | Descricao |
+|-----------|------|-----------|
+| `status` | string | Filtra por status do servico |
+| `order_id` | string | Filtra por pedido |
+| `date_from` | string | Data inicial da viagem (`YYYY-MM-DD`) |
+| `date_to` | string | Data final da viagem (`YYYY-MM-DD`) |
+| `page` | integer | Numero da pagina |
+| `per_page` | integer | Itens por pagina (maximo: 100) |
+
+### Status do servico
+
+| Status | Descricao |
+|--------|-----------|
+| `scheduled` | Servico programado |
+| `confirmed` | Confirmado pelo fornecedor |
+| `in_progress` | Em execucao |
+| `completed` | Concluido |
+| `not_executed` | Nao executado |
+
+### Resposta
+
+```json
+{
+  "data": [
+    {
+      "id": "item_01jk2m3n4p5q6r7s",
+      "order_id": "ord_01jk2m3n4p5q6r7s",
+      "status": "confirmed",
+      "trip_date": "2026/04/15",
+      "trip_time": "10:00",
+      "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+      "destination": "Av. Paulista, 1000, São Paulo - SP",
+      "vehicle_name": "Ônibus Executivo 50 lugares",
+      "tenant_name": "Viação Exemplo",
+      "passengers_count": 40
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 12
+  }
+}
+```
+
+---
+
+## Buscar servico por ID
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/services/item_01jk2m3n4p5q6r7s \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+---
+
+## Dados operacionais
+
+Retorna as informacoes operacionais do servico, preenchidas pelo fornecedor conforme o servico avanca:
+
+```bash
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/services/item_01jk2m3n4p5q6r7s/operational \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Resposta
+
+```json
+{
+  "data": {
+    "id": "item_01jk2m3n4p5q6r7s",
+    "status": "confirmed",
+    "driver": {
+      "name": "Carlos Eduardo Santos",
+      "phone": "11988887777",
+      "document": "12345678901"
+    },
+    "vehicle_plate": "ABC-1234",
+    "vehicle_name": "Ônibus Executivo 50 lugares",
+    "antt": "1234567890",
+    "passengers": [
+      {
+        "name": "Maria Oliveira",
+        "document": "98765432100"
+      },
+      {
+        "name": "José Costa",
+        "document": "11122233344"
+      }
+    ],
+    "passengers_count": 40,
+    "updated_at": "2026-04-14T18:00:00.000000Z"
+  }
+}
+```
+
+### Campos operacionais
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| `driver.name` | string | Nome do motorista |
+| `driver.phone` | string | Telefone do motorista |
+| `driver.document` | string | CPF do motorista |
+| `vehicle_plate` | string | Placa do veiculo |
+| `antt` | string | Numero do registro ANTT |
+| `passengers` | array | Lista de passageiros com nome e documento |
+
+<Note>
+  Os dados operacionais sao preenchidos pelo fornecedor e podem ser atualizados ate a conclusao do servico. Voce tambem pode assinar o webhook `order_item.driver_assigned` e `order_item.vehicle_assigned` para receber notificacoes em tempo real.
+</Note>
+
+---
+
+## Atualizar lista de passageiros
+
+Voce pode enviar ou atualizar a lista de passageiros para o fornecedor:
+
+```bash
+curl -X PUT https://gds.fretatech.com.br/api/partner/v1/services/item_01jk2m3n4p5q6r7s/passengers \
+  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "passengers": [
+      {
+        "name": "Maria Oliveira",
+        "document": "98765432100"
+      },
+      {
+        "name": "José Costa",
+        "document": "11122233344"
+      },
+      {
+        "name": "Ana Lima",
+        "document": "55566677788"
+      }
+    ]
+  }'
+```
+
+### Campos da requisicao
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `passengers` | array | Sim | Lista de passageiros |
+| `passengers[].name` | string | Sim | Nome completo do passageiro |
+| `passengers[].document` | string | Sim | Documento do passageiro (CPF) |
+
+### Resposta
+
+```json
+{
+  "message": "Lista de passageiros atualizada com sucesso.",
+  "data": {
+    "passengers_count": 3
+  }
+}
+```
+
+<Note>
+  O envio de passageiros substitui a lista anterior por completo. Envie sempre a lista completa atualizada.
+</Note>

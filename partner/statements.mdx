@@ -1,0 +1,120 @@
+---
+title: "Extrato Financeiro"
+description: "Consulte margens e faturamento dos seus pedidos"
+---
+
+O extrato financeiro lista os pedidos com os valores de margem aplicados, permitindo que voce acompanhe o faturamento e a rentabilidade da sua operacao. Todos os valores sao retornados em **centavos**.
+
+## Endpoints
+
+| Metodo | Endpoint | Descricao |
+|--------|----------|-----------|
+| `GET` | `/statements` | Listar extrato de pedidos com margens |
+
+---
+
+## Listar extrato
+
+```bash
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/statements?date_from=2026-01-01&date_to=2026-03-31" \
+  -H "Authorization: Bearer SEU_TOKEN"
+```
+
+### Parametros de filtro
+
+| Parametro | Tipo | Descricao |
+|-----------|------|-----------|
+| `date_from` | string | Data inicial de criacao do pedido (`YYYY-MM-DD`) |
+| `date_to` | string | Data final de criacao do pedido (`YYYY-MM-DD`) |
+| `status` | string | Filtra por status do pedido |
+| `customer_id` | string | Filtra por cliente |
+| `page` | integer | Numero da pagina |
+| `per_page` | integer | Itens por pagina (maximo: 100) |
+
+### Resposta
+
+```json
+{
+  "data": [
+    {
+      "id": "ord_01jk2m3n4p5q6r7s",
+      "status": "completed",
+      "trip_date": "2026/01/15",
+      "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+      "destination": "Av. Paulista, 1000, São Paulo - SP",
+      "customer": {
+        "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+        "name": "Empresa Exemplo Ltda"
+      },
+      "tenant_name": "Viação Exemplo",
+      "price_cents": 180000,
+      "margin_percentage": 15,
+      "margin_value_cents": 27000,
+      "total_cents": 207000,
+      "created_at": "2026-01-10T09:00:00.000000Z"
+    },
+    {
+      "id": "ord_02jk3m4n5p6q7r8s",
+      "status": "confirmed",
+      "trip_date": "2026/02/20",
+      "origin": "Belo Horizonte - MG",
+      "destination": "Rio de Janeiro - RJ",
+      "customer": {
+        "id": "02jk3m4n5p6q7r8s9t0u1vwxyz",
+        "name": "Corp Travel Ltda"
+      },
+      "tenant_name": "Transporte Nacional SA",
+      "price_cents": 320000,
+      "margin_percentage": 12,
+      "margin_value_cents": 38400,
+      "total_cents": 358400,
+      "created_at": "2026-02-05T11:30:00.000000Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 35,
+    "stats": {
+      "count": 35,
+      "total_margin_cents": 892500,
+      "average_margin_ticket_cents": 25500
+    }
+  }
+}
+```
+
+### Campos do item
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| `price_cents` | integer | Valor bruto pago ao fornecedor (centavos) |
+| `margin_percentage` | number | Percentual de margem aplicado |
+| `margin_value_cents` | integer | Valor absoluto da margem (centavos) |
+| `total_cents` | integer | Valor total cobrado do cliente (centavos) |
+
+### Objeto stats (meta)
+
+O objeto `stats` dentro de `meta` traz os totalizadores do periodo filtrado:
+
+| Campo | Tipo | Descricao |
+|-------|------|-----------|
+| `count` | integer | Quantidade total de pedidos no periodo |
+| `total_margin_cents` | integer | Soma de todas as margens em centavos |
+| `average_margin_ticket_cents` | integer | Ticket medio de margem por pedido em centavos |
+
+---
+
+## Exemplo de calculo
+
+Para um pedido com `price_cents = 180000` e `margin_percentage = 15`:
+
+| Componente | Valor (centavos) | Valor (R$) |
+|------------|------------------|------------|
+| Custo (fornecedor) | 180.000 | R$ 1.800,00 |
+| Margem (15%) | 27.000 | R$ 270,00 |
+| Total (cliente) | 207.000 | R$ 2.070,00 |
+
+<Note>
+  O extrato inclui pedidos de todos os status por padrao. Para ver apenas pedidos faturados ou concluidos, use o filtro `status=invoiced` ou `status=completed`.
+</Note>
