@@ -1,34 +1,36 @@
 ---
-title: "Busca de Veiculos"
-description: "Consulte disponibilidade e precos em tempo real"
+title: "Busca de Veículos"
+description: "Consulte disponibilidade e preços em tempo real"
 ---
 
-A busca de veiculos e **assincrona**: voce inicia a busca e depois consulta os resultados por polling. Isso acontece porque o GDS consulta multiplos fornecedores em paralelo, e cada um pode levar alguns segundos para responder.
+A busca de veículos é **assíncrona**: você inicia a busca e depois consulta os resultados por polling. Isso acontece porque o GDS consulta múltiplos fornecedores em paralelo, e cada um pode levar alguns segundos para responder.
+
+O GDS resolve os endereços automaticamente via FretaMaps — você não precisa fornecer coordenadas, basta enviar o endereço em texto livre.
 
 ## Endpoints
 
-| Metodo | Endpoint | Descricao |
+| Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `POST` | `/search` | Iniciar busca de veiculos |
-| `GET` | `/search/{search_id}/results` | Consultar resultados (polling) |
+| `POST` | `/search` | Iniciar busca de veículos |
+| `GET` | `/search/{search_db_id}` | Consultar resultados (polling) |
 
 ---
 
 ## Como funciona o fluxo
 
 ```
-1. POST /search  →  recebe search_id (status: pending)
+1. POST /search  →  recebe search_db_id (status: pending)
         |
         | (aguarde 2-5 segundos)
         v
-2. GET /search/{id}/results  →  status: pending | complete | failed
+2. GET /search/{id}  →  status: pending | complete | failed
         |
         | (repita enquanto status = pending)
         v
-3. Quando status = complete  →  lista de veiculos disponivel
+3. Quando status = complete  →  lista de veículos disponível
 ```
 
-Recomendamos polling a cada **2 segundos**, com timeout maximo de **30 segundos**.
+Recomendamos polling a cada **2 segundos**, com timeout máximo de **30 segundos**.
 
 ---
 
@@ -36,21 +38,11 @@ Recomendamos polling a cada **2 segundos**, com timeout maximo de **30 segundos*
 
 ```bash
 curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
-  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Authorization: Bearer SUA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "origin": {
-      "description": "Aeroporto de Guarulhos, Guarulhos - SP",
-      "place_id": "ChIJx7...",
-      "lat": -23.4356,
-      "lng": -46.4731
-    },
-    "destination": {
-      "description": "Av. Paulista, 1000, São Paulo - SP",
-      "place_id": "ChIJy8...",
-      "lat": -23.5614,
-      "lng": -46.6565
-    },
+    "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+    "destination": "Av. Paulista, 1000, São Paulo - SP",
     "trip_date": "2026/04/15",
     "trip_time": "10:00",
     "trip_type": "onewaytrip",
@@ -58,66 +50,75 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
   }'
 ```
 
-### Campos da requisicao
+### Campos da requisição
 
-| Campo | Tipo | Obrigatorio | Descricao |
+| Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| `origin.description` | string | Sim | Descricao textual da origem |
-| `origin.place_id` | string | Sim | Place ID do Google Maps |
-| `origin.lat` | number | Sim | Latitude da origem |
-| `origin.lng` | number | Sim | Longitude da origem |
-| `destination.description` | string | Sim | Descricao textual do destino |
-| `destination.place_id` | string | Sim | Place ID do Google Maps |
-| `destination.lat` | number | Sim | Latitude do destino |
-| `destination.lng` | number | Sim | Longitude do destino |
+| `origin` | string | Sim | Endereço de origem em texto livre |
+| `destination` | string | Sim | Endereço de destino em texto livre |
 | `trip_date` | string | Sim | Data da viagem no formato `YYYY/MM/DD` |
-| `trip_time` | string | Sim | Horario da viagem no formato `HH:MM` |
+| `trip_time` | string | Sim | Horário de partida no formato `HH:MM` |
 | `trip_type` | string | Sim | Tipo da viagem (veja tabela abaixo) |
-| `passengers` | integer | Sim | Numero de passageiros |
+| `passengers` | integer | Não | Número de passageiros |
 
 ### Tipos de viagem
 
-| Valor | Descricao |
+| Valor | Descrição |
 |-------|-----------|
 | `onewaytrip` | Ida simples |
 | `roundtrip` | Ida e volta |
 | `hourtrip` | Por hora (com franquia) |
-| `customtrip` | Roteiro personalizado (multiplos trechos) |
+| `customtrip` | Roteiro personalizado (múltiplos trechos) |
 
 ### Resposta
 
 ```json
 {
+  "success": true,
   "data": {
-    "search_id": "srch_01jk2m3n4p5q6r7s",
-    "status": "pending"
+    "search_db_id": 123,
+    "status": "pending",
+    "origin": {
+      "description": "Aeroporto Internacional de Guarulhos",
+      "lat": -23.4356,
+      "lng": -46.4731
+    },
+    "destination": {
+      "description": "Av. Paulista, 1000 - Bela Vista, São Paulo - SP",
+      "lat": -23.563,
+      "lng": -46.6543
+    },
+    "message": "Busca iniciada. Use GET /search/{id} para consultar."
   }
 }
 ```
+
+A resposta inclui os endereços resolvidos pelo GDS (com coordenadas confirmadas) para você validar se o local foi interpretado corretamente.
 
 ---
 
 ## Consultar resultados (polling)
 
 ```bash
-curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/srch_01jk2m3n4p5q6r7s/results" \
-  -H "Authorization: Bearer SEU_TOKEN"
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/123" \
+  -H "Authorization: Bearer SUA_API_KEY"
 ```
 
 ### Valores de status
 
-| Status | Descricao |
+| Status | Descrição |
 |--------|-----------|
 | `pending` | Busca em andamento — continue o polling |
-| `complete` | Busca concluida — resultados disponiveis |
+| `complete` | Busca concluída — resultados disponíveis |
 | `failed` | Erro na busca — tente novamente |
 
 ### Resposta quando status = pending
 
 ```json
 {
+  "success": true,
   "data": {
-    "search_id": "srch_01jk2m3n4p5q6r7s",
+    "search_db_id": 123,
     "status": "pending",
     "vehicles": []
   }
@@ -128,26 +129,27 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/srch_01jk2m3n4p5
 
 ```json
 {
+  "success": true,
   "data": {
-    "search_id": "srch_01jk2m3n4p5q6r7s",
+    "search_db_id": 123,
     "status": "complete",
     "vehicles": [
       {
-        "id": "veh_abc123",
+        "id": "abc123",
         "name": "Ônibus Executivo 50 lugares",
         "capacity": 50,
         "type": "bus",
         "price_cents": 180000,
-        "tenant_id": "tenant_xyz789",
+        "tenant_id": "tenant-uuid-xyz",
         "tenant_name": "Viação Exemplo"
       },
       {
-        "id": "veh_def456",
+        "id": "def456",
         "name": "Van Executiva 16 lugares",
         "capacity": 16,
         "type": "van",
         "price_cents": 85000,
-        "tenant_id": "tenant_abc123",
+        "tenant_id": "tenant-uuid-abc",
         "tenant_name": "Transporte Premium Ltda"
       }
     ]
@@ -155,52 +157,44 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/srch_01jk2m3n4p5
 }
 ```
 
-### Estrutura do veiculo
+### Estrutura do veículo
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `id` | string | Identificador do veiculo na busca (use para criar o orcamento) |
-| `name` | string | Nome/descricao do veiculo |
+| `id` | string | Identificador do veículo (use para criar o orçamento) |
+| `name` | string | Nome/descrição do veículo |
 | `capacity` | integer | Capacidade de passageiros |
-| `type` | string | Tipo do veiculo (`bus`, `van`, `minibus`) |
-| `price_cents` | integer | Preco em centavos (valor do fornecedor, sem margem) |
+| `type` | string | Tipo do veículo (`bus`, `van`, `minibus`) |
+| `price_cents` | integer | Preço em centavos (valor do fornecedor, sem margem) |
 | `tenant_id` | string | Identificador do fornecedor |
 | `tenant_name` | string | Nome do fornecedor |
 
 <Note>
-  O campo `price_cents` representa o valor bruto do fornecedor. A margem configurada no GDS sera aplicada ao criar o orcamento. Veja [Orcamentos](/partner/quotes) para mais detalhes.
+  O campo `price_cents` representa o valor bruto do fornecedor. A margem configurada no GDS será aplicada ao criar o orçamento. Veja [Orçamentos](/partner/quotes) para mais detalhes.
 </Note>
 
 ---
 
-## Exemplo de implementacao do polling
+## Exemplo de polling em JavaScript
 
 ```javascript
-async function waitForSearchResults(searchId, token) {
+async function waitForSearchResults(searchDbId, apiKey) {
   const maxAttempts = 15; // 30 segundos com intervalo de 2s
-  let attempts = 0;
 
-  while (attempts < maxAttempts) {
+  for (let i = 0; i < maxAttempts; i++) {
     const response = await fetch(
-      `https://gds.fretatech.com.br/api/partner/v1/search/${searchId}/results`,
-      { headers: { Authorization: `Bearer ${token}` } }
+      `https://gds.fretatech.com.br/api/partner/v1/search/${searchDbId}`,
+      { headers: { Authorization: `Bearer ${apiKey}` } }
     );
 
     const { data } = await response.json();
 
-    if (data.status === 'complete') {
-      return data.vehicles;
-    }
+    if (data.status === 'complete') return data.vehicles;
+    if (data.status === 'failed') throw new Error('Busca falhou. Tente novamente.');
 
-    if (data.status === 'failed') {
-      throw new Error('Busca falhou. Tente novamente.');
-    }
-
-    // Ainda pendente — aguarda 2 segundos antes de tentar novamente
     await new Promise(resolve => setTimeout(resolve, 2000));
-    attempts++;
   }
 
-  throw new Error('Timeout: busca nao concluiu em 30 segundos.');
+  throw new Error('Timeout: busca não concluiu em 30 segundos.');
 }
 ```

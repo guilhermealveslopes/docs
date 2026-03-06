@@ -1,6 +1,6 @@
 openapi: 3.0.4
 info:
-  title: GDS Partner API
+  title: GDS
   description: |-
     API REST para integração de parceiros com o GDS (Global Distribution System) da Fretatech.
 

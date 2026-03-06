@@ -1,93 +1,53 @@
 ---
 title: "Autenticação"
-description: "Como autenticar suas requisições na Partner API"
+description: "Como autenticar suas requisições na GDS"
 ---
 
-A Partner API utiliza autenticação via **Bearer Token**. O token é obtido através de um endpoint de autenticação e deve ser incluído em todas as requisições subsequentes.
+A GDS utiliza autenticação via **API Key estática**. A chave é gerada nas configurações do GDS e deve ser enviada em todas as requisições.
 
-## Fluxo de autenticação
+## Onde encontrar sua chave
 
-1. Faça uma requisição `POST /api/partner/v1/auth/token` com suas credenciais
-2. Receba o token de acesso na resposta
-3. Inclua o token no header `Authorization` de todas as requisições
+Acesse **Configurações → API Partner** no painel do GDS. Você verá a chave atual e um botão para copiá-la ou gerar uma nova.
 
-## Obter token
+<Note>
+  Caso a seção "API Partner" não apareça nas configurações, entre em contato com o suporte para ativar o acesso.
+</Note>
 
-```bash
-curl -X POST https://gds.fretatech.com.br/api/partner/v1/auth/token \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "seu@email.com",
-    "password": "sua_senha"
-  }'
-```
+## Como usar a chave
 
-**Resposta:**
-
-```json
-{
-  "data": {
-    "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
-    "token_type": "Bearer",
-    "expires_at": "2026-04-06T00:00:00.000000Z"
-  }
-}
-```
-
-### Campos da resposta
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `token` | string | Token JWT a ser usado no header Authorization |
-| `token_type` | string | Sempre `"Bearer"` |
-| `expires_at` | string | Data e hora de expiração do token (ISO 8601) |
-
-## Usar o token nas requisições
-
-Inclua o token no header `Authorization` de todas as requisições:
+Inclua a chave no header `Authorization` de todas as requisições:
 
 ```bash
 curl -X GET https://gds.fretatech.com.br/api/partner/v1/customers \
-  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
+  -H "Authorization: Bearer gds_a1b2c3d4e5f6..." \
   -H "Accept: application/json"
 ```
 
-## Revogar token
+O formato da chave é sempre `gds_` seguido de 64 caracteres hexadecimais:
 
-Para revogar o token atual (logout), faça uma requisição `POST` ao endpoint de revogação:
-
-```bash
-curl -X POST https://gds.fretatech.com.br/api/partner/v1/auth/logout \
-  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..." \
-  -H "Accept: application/json"
 ```
-
-**Resposta:**
-
-```json
-{
-  "message": "Token revogado com sucesso."
-}
+gds_4f3a8b9c2d1e7f0a5b6c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9
 ```
 
 ## Erros de autenticação
 
-Caso o token seja inválido, expirado ou ausente, a API retornará:
+| Situação | HTTP | Mensagem |
+|----------|------|----------|
+| Header `Authorization` ausente | 401 | `API key não fornecida. Use o header Authorization: Bearer {api_key}.` |
+| Chave inválida | 401 | `Chave de API inválida.` |
+| Nenhuma chave configurada no GDS | 401 | `Nenhuma chave de API configurada. Gere uma chave nas Configurações.` |
 
-```json
-{
-  "message": "Unauthenticated."
-}
-```
+## Gerar nova chave
 
-Com o status HTTP `401 Unauthorized`.
+Em **Configurações → API Partner**, clique em **Gerar nova chave**.
 
 <Warning>
-  Mantenha seu token em segurança. Nunca exponha tokens em repositórios de código, logs ou ambientes públicos. Em caso de comprometimento, revogue imediatamente o token e gere um novo.
+  Gerar uma nova chave **invalida imediatamente a chave atual**. Todos os sistemas que usam a chave antiga deixarão de funcionar até serem atualizados.
 </Warning>
 
 ## Boas práticas
 
-- Armazene o token em variáveis de ambiente, nunca hardcoded no código
-- Implemente renovação automática antes da expiração (`expires_at`)
-- Use HTTPS em todas as requisições — requisições HTTP são rejeitadas
+- Armazene a chave em variáveis de ambiente, nunca hardcoded no código
+- Use HTTPS em todas as requisições
+- Rotacione a chave periodicamente ou imediatamente em caso de vazamento
+- Não compartilhe a chave em repositórios de código ou logs

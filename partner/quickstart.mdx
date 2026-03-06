@@ -3,32 +3,19 @@ title: "Quickstart"
 description: "Faça sua primeira busca e crie um pedido em minutos"
 ---
 
-Este guia mostra o fluxo completo da Partner API: desde a autenticação até a criação de um pedido de fretamento. Siga os passos na ordem indicada.
+Este guia mostra o fluxo completo da GDS: desde a autenticação até a criação de um pedido de fretamento. Siga os passos na ordem indicada.
 
 <Steps>
 
-  <Step title="Obtenha seu token de acesso">
-    Autentique-se com suas credenciais GDS para obter o Bearer token:
+  <Step title="Obtenha sua API Key">
+    Acesse **Configurações → API Partner** no painel do GDS e copie a chave de API.
 
-    ```bash
-    curl -X POST https://gds.fretatech.com.br/api/partner/v1/auth/token \
-      -H "Content-Type: application/json" \
-      -d '{
-        "email": "seu@email.com",
-        "password": "sua_senha"
-      }'
+    Se ainda não houver uma chave gerada, clique em **Gerar nova chave**.
+
+    A chave tem o formato `gds_` seguido de 64 caracteres e deve ser usada no header `Authorization` de todas as requisições:
+
     ```
-
-    Guarde o `token` retornado. Você precisará dele em todos os próximos passos.
-
-    ```json
-    {
-      "data": {
-        "token": "eyJ0eXAiOiJKV1Qi...",
-        "token_type": "Bearer",
-        "expires_at": "2026-04-06T00:00:00.000000Z"
-      }
-    }
+    Authorization: Bearer gds_4f3a8b9c2d1e7f0a...
     ```
   </Step>
 
@@ -37,14 +24,14 @@ Este guia mostra o fluxo completo da Partner API: desde a autenticação até a 
 
     ```bash
     curl -X POST https://gds.fretatech.com.br/api/partner/v1/customers \
-      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Authorization: Bearer SUA_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "name": "Empresa Exemplo Ltda",
         "type": "company",
-        "document": "12345678000195",
+        "cnpj_cpf": "12.345.678/0001-95",
         "email": "contato@exemplo.com.br",
-        "phone": "11999990000",
+        "phone": "(11) 99999-0000",
         "integration_code": "ERP-CLIENTE-001"
       }'
     ```
@@ -53,10 +40,10 @@ Este guia mostra o fluxo completo da Partner API: desde a autenticação até a 
 
     ```json
     {
+      "success": true,
       "data": {
-        "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+        "id": 42,
         "name": "Empresa Exemplo Ltda",
-        "type": "company",
         "integration_code": "ERP-CLIENTE-001"
       }
     }
@@ -64,25 +51,15 @@ Este guia mostra o fluxo completo da Partner API: desde a autenticação até a 
   </Step>
 
   <Step title="Inicie uma busca de veículos">
-    Busque veículos disponíveis para a rota e data desejadas. A busca é assíncrona e retorna um `search_id`:
+    Envie apenas os endereços em texto livre — o GDS resolve as coordenadas automaticamente:
 
     ```bash
     curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
-      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Authorization: Bearer SUA_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "origin": {
-          "description": "Aeroporto de Guarulhos, Guarulhos - SP",
-          "place_id": "ChIJx7...",
-          "lat": -23.4356,
-          "lng": -46.4731
-        },
-        "destination": {
-          "description": "Av. Paulista, 1000, São Paulo - SP",
-          "place_id": "ChIJy8...",
-          "lat": -23.5614,
-          "lng": -46.6565
-        },
+        "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
+        "destination": "Av. Paulista, 1000, São Paulo - SP",
         "trip_date": "2026/04/15",
         "trip_time": "10:00",
         "trip_type": "onewaytrip",
@@ -92,37 +69,42 @@ Este guia mostra o fluxo completo da Partner API: desde a autenticação até a 
 
     ```json
     {
+      "success": true,
       "data": {
-        "search_id": "srch_01jk2m3n4p5q6r7s",
-        "status": "pending"
+        "search_db_id": 123,
+        "status": "pending",
+        "origin": { "description": "Aeroporto Internacional de Guarulhos", "lat": -23.4356, "lng": -46.4731 },
+        "destination": { "description": "Av. Paulista, 1000 - Bela Vista, São Paulo - SP", "lat": -23.563, "lng": -46.6543 },
+        "message": "Busca iniciada. Use GET /search/{id} para consultar."
       }
     }
     ```
   </Step>
 
-  <Step title="Aguarde os resultados da busca (polling)">
-    A busca consulta fornecedores em tempo real. Faça polling no endpoint de resultados até o status ser `complete`:
+  <Step title="Aguarde os resultados (polling)">
+    A busca consulta fornecedores em tempo real. Faça polling a cada ~2 segundos até o status ser `complete`:
 
     ```bash
-    curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/srch_01jk2m3n4p5q6r7s/results" \
-      -H "Authorization: Bearer SEU_TOKEN"
+    curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/123" \
+      -H "Authorization: Bearer SUA_API_KEY"
     ```
 
     Quando `status` for `complete`, você terá a lista de veículos disponíveis:
 
     ```json
     {
+      "success": true,
       "data": {
-        "search_id": "srch_01jk2m3n4p5q6r7s",
+        "search_db_id": 123,
         "status": "complete",
         "vehicles": [
           {
-            "id": "veh_abc123",
+            "id": "abc123",
             "name": "Ônibus Executivo 50 lugares",
             "capacity": 50,
             "type": "bus",
             "price_cents": 180000,
-            "tenant_id": "tenant_xyz",
+            "tenant_id": "tenant-uuid",
             "tenant_name": "Viação Exemplo"
           }
         ]
@@ -130,38 +112,24 @@ Este guia mostra o fluxo completo da Partner API: desde a autenticação até a 
     }
     ```
 
-    Anote o `id` do veículo desejado e o `search_id`.
+    Anote o `id` do veículo desejado.
   </Step>
 
   <Step title="Crie um orçamento">
-    Com o `search_id` e o `vehicle_id`, crie o orçamento para o cliente:
+    Com os dados do veículo e do cliente, crie o orçamento. Use `default_margin_percentage` para definir a margem desta operação:
 
     ```bash
     curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
-      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Authorization: Bearer SUA_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
-        "customer_id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
-        "search_id": "srch_01jk2m3n4p5q6r7s",
-        "vehicle_id": "veh_abc123",
-        "default_margin_percentage": 15
+        "customer_id": 42,
+        "default_margin_percentage": 15,
+        "simpleTrip": { ... }
       }'
     ```
 
-    ```json
-    {
-      "data": {
-        "id": "qt_01jk2m3n4p5q6r7s",
-        "status": "open",
-        "total_cents": 207000,
-        "margin_percentage": 15,
-        "customer": {
-          "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
-          "name": "Empresa Exemplo Ltda"
-        }
-      }
-    }
-    ```
+    Anote o `id` do orçamento criado.
   </Step>
 
   <Step title="Crie o pedido">
@@ -169,21 +137,18 @@ Este guia mostra o fluxo completo da Partner API: desde a autenticação até a 
 
     ```bash
     curl -X POST https://gds.fretatech.com.br/api/partner/v1/orders \
-      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Authorization: Bearer SUA_API_KEY" \
       -H "Content-Type: application/json" \
-      -d '{
-        "quote_id": "qt_01jk2m3n4p5q6r7s"
-      }'
+      -d '{ "quote_id": 99 }'
     ```
 
     ```json
     {
+      "success": true,
       "data": {
-        "id": "ord_01jk2m3n4p5q6r7s",
+        "id": 200,
         "status": "pending_invoice",
-        "total_cents": 207000,
-        "quote_id": "qt_01jk2m3n4p5q6r7s",
-        "created_at": "2026-03-06T14:30:00.000000Z"
+        "total_amount": 207000
       }
     }
     ```
@@ -192,26 +157,25 @@ Este guia mostra o fluxo completo da Partner API: desde a autenticação até a 
   </Step>
 
   <Step title="Configure seu webhook para receber atualizações">
-    Registre uma URL no seu sistema para receber eventos em tempo real (motorista atribuído, status alterado, etc.):
+    Registre uma URL no seu sistema para receber eventos em tempo real:
 
     ```bash
     curl -X POST https://gds.fretatech.com.br/api/partner/v1/webhooks \
-      -H "Authorization: Bearer SEU_TOKEN" \
+      -H "Authorization: Bearer SUA_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "url": "https://seu-sistema.com.br/webhooks/gds",
-        "events": ["order.status_changed", "order_item.driver_assigned", "order_item.vehicle_assigned"],
-        "secret": "seu_segredo_hmac"
+        "events": ["order.status_changed", "order_item.driver_assigned", "order_item.vehicle_assigned"]
       }'
     ```
 
-    Veja a documentação de [Webhooks](/partner/webhooks) para detalhes sobre verificação de assinatura e lista de eventos disponíveis.
+    O `secret` HMAC é gerado automaticamente — use-o para verificar a assinatura dos eventos recebidos. Veja [Webhooks](/partner/webhooks) para mais detalhes.
   </Step>
 
 </Steps>
 
-## Proximos passos
+## Próximos passos
 
-- Consulte a referencia completa de cada endpoint nas paginas desta secao
-- Configure [Webhooks](/partner/webhooks) para receber atualizacoes operacionais automaticamente
+- Consulte a referência completa de cada endpoint nas páginas desta seção
+- Configure [Webhooks](/partner/webhooks) para receber atualizações operacionais automaticamente
 - Veja [Extrato Financeiro](/partner/statements) para consultar margens e faturamento
