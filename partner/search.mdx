@@ -12,25 +12,29 @@ O GDS resolve os endereços automaticamente via FretaMaps — você não precisa
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | `POST` | `/search` | Iniciar busca de veículos |
-| `GET` | `/search/{search_db_id}` | Consultar resultados (polling) |
+| `GET` | `/search/{search_id}` | Consultar resultados (polling) |
 
 ---
 
 ## Como funciona o fluxo
 
 ```
-1. POST /search  →  recebe search_db_id (status: pending)
+1. POST /search  →  recebe search_id (status: pending)
         |
         | (aguarde 2-5 segundos)
         v
-2. GET /search/{id}  →  status: pending | complete | failed
+2. GET /search/{search_id}  →  status: pending | partial | complete | failed
         |
-        | (repita enquanto status = pending)
+        | (repita enquanto status = pending ou partial)
         v
-3. Quando status = complete  →  lista de veículos disponível
+3. Quando status = complete  →  lista completa de veículos disponível
 ```
 
 Recomendamos polling a cada **2 segundos**, com timeout máximo de **30 segundos**.
+
+<Note>
+  O status `partial` indica que alguns fornecedores já responderam, mas a busca ainda está em andamento. Você pode exibir os veículos parciais imediatamente e continuar o polling até `complete`.
+</Note>
 
 ---
 
@@ -76,7 +80,7 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
 {
   "success": true,
   "data": {
-    "search_db_id": 123,
+    "search_id": "Ox2VB6xxOL4HOVae",
     "status": "pending",
     "origin": {
       "description": "Aeroporto Internacional de Guarulhos",
@@ -88,7 +92,7 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
       "lat": -23.563,
       "lng": -46.6543
     },
-    "message": "Busca iniciada. Use GET /search/{id} para consultar."
+    "message": "Busca iniciada. Use GET /search/{search_id} para consultar."
   }
 }
 ```
@@ -100,7 +104,7 @@ A resposta inclui os endereços resolvidos pelo GDS (com coordenadas confirmadas
 ## Consultar resultados (polling)
 
 ```bash
-curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/123" \
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/Ox2VB6xxOL4HOVae" \
   -H "Authorization: Bearer SUA_API_KEY"
 ```
 
@@ -108,8 +112,9 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/123" \
 
 | Status | Descrição |
 |--------|-----------|
-| `pending` | Busca em andamento — continue o polling |
-| `complete` | Busca concluída — resultados disponíveis |
+| `pending` | Busca em andamento — nenhum fornecedor respondeu ainda |
+| `partial` | Alguns fornecedores responderam — continue o polling |
+| `complete` | Busca concluída — resultados completos disponíveis |
 | `failed` | Erro na busca — tente novamente |
 
 ### Resposta quando status = pending
@@ -118,39 +123,52 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/123" \
 {
   "success": true,
   "data": {
-    "search_db_id": 123,
+    "search_id": "Ox2VB6xxOL4HOVae",
     "status": "pending",
+    "total_vehicles": 0,
     "vehicles": []
   }
 }
 ```
 
-### Resposta quando status = complete
+### Resposta quando status = partial ou complete
 
 ```json
 {
   "success": true,
   "data": {
-    "search_db_id": 123,
-    "status": "complete",
+    "search_id": "Ox2VB6xxOL4HOVae",
+    "status": "partial",
+    "total_vehicles": 2,
     "vehicles": [
       {
-        "id": "abc123",
-        "name": "Ônibus Executivo 50 lugares",
-        "capacity": 50,
-        "type": "bus",
-        "price_cents": 180000,
-        "tenant_id": "tenant-uuid-xyz",
-        "tenant_name": "Viação Exemplo"
-      },
-      {
-        "id": "def456",
-        "name": "Van Executiva 16 lugares",
-        "capacity": 16,
-        "type": "van",
-        "price_cents": 85000,
-        "tenant_id": "tenant-uuid-abc",
-        "tenant_name": "Transporte Premium Ltda"
+        "id": 28,
+        "name": "Ônibus Semi-Leito 45 Lugares Motor Traseiro - Bela Vista",
+        "capacity": 44,
+        "available_quantity": 100,
+        "type": {
+          "value": "onibus",
+          "label": "Ônibus"
+        },
+        "class": "Semi-Leito",
+        "wifi": true,
+        "bathroom": true,
+        "bilingual": false,
+        "air_conditioning": true,
+        "attributes": [
+          { "id": 10, "name": "Cobertor" },
+          { "id": 6, "name": "Geladeira" },
+          { "id": 8, "name": "Tomada" },
+          { "id": 1, "name": "TV" }
+        ],
+        "image_url": "https://example.com/storage/fleet/onibus.jpg",
+        "gallery": [
+          "https://example.com/storage/fleet/gallery/onibus-interior.jpg"
+        ],
+        "price_cents": 41460.67,
+        "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5",
+        "tenant_name": "Viação Exemplo - São Paulo",
+        "tenant_logo": "https://example.com/storage/logos/viacao-exemplo.jpg"
       }
     ]
   }
@@ -161,13 +179,35 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/123" \
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `id` | string | Identificador do veículo (use para criar o orçamento) |
-| `name` | string | Nome/descrição do veículo |
+| `id` | integer | Identificador do veículo (use para criar o orçamento) |
+| `name` | string | Nome/descrição completa do veículo |
 | `capacity` | integer | Capacidade de passageiros |
-| `type` | string | Tipo do veículo (`bus`, `van`, `minibus`) |
-| `price_cents` | integer | Preço em centavos (valor do fornecedor, sem margem) |
-| `tenant_id` | string | Identificador do fornecedor |
+| `available_quantity` | integer | Quantidade de unidades disponíveis desse veículo |
+| `type` | object | Tipo do veículo com `value` (chave) e `label` (texto legível) |
+| `class` | string | Classe do veículo (ex: `"Semi-Leito"`, `"Executivo"`, `"Leito"`) |
+| `wifi` | boolean | Possui Wi-Fi a bordo |
+| `bathroom` | boolean | Possui banheiro a bordo |
+| `bilingual` | boolean | Motorista/guia bilíngue |
+| `air_conditioning` | boolean | Possui ar-condicionado |
+| `attributes` | array | Lista de atributos/comodidades (`id` e `name`) |
+| `image_url` | string | URL da foto principal do veículo |
+| `gallery` | array | URLs das fotos adicionais do veículo |
+| `price_cents` | number | Preço em centavos (valor do fornecedor, sem margem GDS) |
+| `tenant_id` | string | UUID do fornecedor |
 | `tenant_name` | string | Nome do fornecedor |
+| `tenant_logo` | string | URL do logotipo do fornecedor |
+
+### Valores possíveis de `type.value`
+
+| Valor | Label |
+|-------|-------|
+| `onibus` | Ônibus |
+| `micro-onibus` | Micro-ônibus |
+| `minibus` | Mini-ônibus |
+| `van` | Van |
+| `suv` | SUV |
+| `sedan` | Sedã |
+| `executivo` | Executivo |
 
 <Note>
   O campo `price_cents` representa o valor bruto do fornecedor. A margem configurada no GDS será aplicada ao criar o orçamento. Veja [Orçamentos](/partner/quotes) para mais detalhes.
@@ -178,16 +218,21 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/123" \
 ## Exemplo de polling em JavaScript
 
 ```javascript
-async function waitForSearchResults(searchDbId, apiKey) {
+async function waitForSearchResults(searchId, apiKey) {
   const maxAttempts = 15; // 30 segundos com intervalo de 2s
 
   for (let i = 0; i < maxAttempts; i++) {
     const response = await fetch(
-      `https://gds.fretatech.com.br/api/partner/v1/search/${searchDbId}`,
+      `https://gds.fretatech.com.br/api/partner/v1/search/${searchId}`,
       { headers: { Authorization: `Bearer ${apiKey}` } }
     );
 
     const { data } = await response.json();
+
+    // Exibe veículos parciais imediatamente
+    if (data.vehicles.length > 0) {
+      renderVehicles(data.vehicles);
+    }
 
     if (data.status === 'complete') return data.vehicles;
     if (data.status === 'failed') throw new Error('Busca falhou. Tente novamente.');

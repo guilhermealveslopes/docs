@@ -3,17 +3,17 @@ title: "Clientes"
 description: "Gerenciamento completo de clientes (TMCs e empresas)"
 ---
 
-O endpoint de clientes permite criar, consultar e atualizar cadastros de pessoas fisicas (PF) e juridicas (PJ) no GDS. Use o campo `integration_code` para vincular cada cliente ao identificador correspondente no seu sistema.
+O endpoint de clientes permite criar, consultar e atualizar cadastros de pessoas físicas (PF) e jurídicas (PJ) no GDS. Ao criar um cliente, o GDS retorna automaticamente um `integration_code` — use esse código para referenciar o cliente em chamadas futuras (orçamentos, pedidos etc.).
 
 ## Endpoints
 
-| Metodo | Endpoint | Descricao |
+| Método | Endpoint | Descrição |
 |--------|----------|-----------|
 | `GET` | `/customers` | Listar clientes |
 | `POST` | `/customers` | Criar cliente |
 | `GET` | `/customers/{id}` | Buscar cliente por ID |
+| `GET` | `/customers/by-code/{integration_code}` | Buscar cliente pelo integration_code |
 | `PUT` | `/customers/{id}` | Atualizar cliente |
-| `DELETE` | `/customers/{id}` | Remover cliente (soft delete) |
 
 ---
 
@@ -69,47 +69,55 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/customers \
   -d '{
     "name": "João Silva",
     "type": "individual",
-    "document": "12345678901",
+    "cnpj_cpf": "12345678901",
     "email": "joao.silva@email.com",
-    "phone": "11988887777",
-    "integration_code": "ERP-PF-00042"
+    "tel": "11988887777"
   }'
 ```
 
-### Campos da requisicao
+### Campos da requisição
 
-| Campo | Tipo | Obrigatorio | Descricao |
+| Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| `name` | string | Sim | Nome completo (PF) ou razao social (PJ) |
+| `name` | string | Sim | Nome completo (PF) ou razão social (PJ) |
 | `type` | string | Sim | `individual` para PF, `company` para PJ |
-| `document` | string | Sim | CPF (PF) ou CNPJ (PJ), apenas digitos |
-| `email` | string | Nao | E-mail de contato |
-| `phone` | string | Nao | Telefone com DDD, apenas digitos |
-| `integration_code` | string | Nao | Identificador do cliente no seu sistema |
+| `cnpj_cpf` | string | Não | CPF (PF, 11 dígitos) ou CNPJ (PJ, 14 dígitos), apenas dígitos |
+| `email` | string | Não | E-mail de contato (único por GDS) |
+| `tel` | string | Não | Telefone principal com DDD |
+| `last_name` | string | Não | Sobrenome (PF) |
+| `trade_name` | string | PJ obrigatório | Nome fantasia da empresa |
+| `responsible` | string | PJ obrigatório | Nome do responsável |
 
-### Diferenca entre tipos
+### Diferença entre tipos
 
 | Campo | PF (`individual`) | PJ (`company`) |
 |-------|-------------------|----------------|
-| `document` | CPF (11 digitos) | CNPJ (14 digitos) |
-| `name` | Nome completo | Razao social |
+| `cnpj_cpf` | CPF (11 dígitos) | CNPJ (14 dígitos) |
+| `name` | Nome completo | Razão social |
+| `trade_name` | — | Obrigatório |
+| `responsible` | — | Obrigatório |
 
 ### Resposta
 
 ```json
 {
+  "success": true,
   "data": {
-    "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
+    "id": 42,
     "name": "João Silva",
     "type": "individual",
-    "document": "12345678901",
+    "cnpj_cpf": "12345678901",
     "email": "joao.silva@email.com",
-    "phone": "11988887777",
-    "integration_code": "ERP-PF-00042",
+    "tel": "11988887777",
+    "integration_code": "42",
     "created_at": "2026-03-06T14:00:00.000000Z"
   }
 }
 ```
+
+<Note>
+  O campo `integration_code` é gerado automaticamente pelo GDS no momento da criação e corresponde ao ID interno do cliente. Salve esse valor no seu sistema para referenciar este cliente em orçamentos, pedidos e consultas futuras.
+</Note>
 
 ---
 
@@ -138,32 +146,31 @@ curl -X PUT https://gds.fretatech.com.br/api/partner/v1/customers/01jk2m3n4p5q6r
 
 ---
 
-## Remover cliente
+## Buscar por integration_code
 
-O cliente e removido com **soft delete** — os dados historicos sao preservados nos pedidos existentes.
+Use este endpoint para encontrar um cliente pelo `integration_code` que você salvou no seu sistema:
 
 ```bash
-curl -X DELETE https://gds.fretatech.com.br/api/partner/v1/customers/01jk2m3n4p5q6r7s8t9u0vwxyz \
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/customers/by-code/42 \
   -H "Authorization: Bearer SEU_TOKEN"
 ```
 
-**Resposta:**
+Você também pode usar o filtro `integration_code` na listagem:
 
-```json
-{
-  "message": "Cliente removido com sucesso."
-}
+```bash
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/customers?integration_code=42" \
+  -H "Authorization: Bearer SEU_TOKEN"
 ```
 
 ---
 
 ## O campo integration_code
 
-O `integration_code` e um identificador livre que voce define. Use-o para mapear clientes do GDS com registros no seu ERP ou sistema interno.
+O `integration_code` é atribuído **automaticamente** pelo GDS no momento da criação do cliente. Seu valor é o ID interno do cliente no GDS.
 
-Exemplos de uso:
-- `"ERP-12345"` — ID do cliente no seu ERP
-- `"TOTVS-CLI-9901"` — referencia de cliente no TOTVS
-- `"UUID-do-seu-sistema"` — qualquer identificador unico do seu sistema
+**Fluxo recomendado:**
 
-Voce pode buscar clientes diretamente pelo `integration_code` usando o filtro na listagem.
+1. Crie o cliente via `POST /customers`
+2. Salve o `integration_code` retornado na resposta no seu sistema
+3. Use esse código para buscar o cliente em chamadas futuras (`GET /customers/by-code/{code}`)
+4. Ao criar orçamentos ou pedidos, referencie o cliente pelo `integration_code`
