@@ -14,12 +14,6 @@
               "tab": "Fretamaps",
               "groups": [
                   {
-                      "group": "Visão Geral",
-                      "pages": [
-                          "fretamaps/introduction/getting-started"
-                      ]
-                  },
-                  {
                       "group": "API",
                       "pages": [
                           "fretamaps/api-reference/autocomplete",
@@ -93,16 +87,6 @@
                             "partner/reports",
                             "partner/settings",
                             "partner/webhooks"
-                        ]
-                    }
-                ]
-            },{
-                "tab": "Migração",
-                "groups": [
-                    {
-                        "group": "Introdução",
-                        "pages": [
-                            "migration/dns"
                         ]
                     }
                 ]
