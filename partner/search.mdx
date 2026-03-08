@@ -192,7 +192,7 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/Ox2VB6xxOL4HOVae
 | `attributes` | array | Lista de atributos/comodidades (`id` e `name`) |
 | `image_url` | string | URL da foto principal do veículo |
 | `gallery` | array | URLs das fotos adicionais do veículo |
-| `price_cents` | number | Preço em centavos (valor do fornecedor, sem margem GDS) |
+| `price_cents` | number | Preço em **reais** do fornecedor, sem margem GDS (ex: `41586.16` = R$ 41.586,16) |
 | `tenant_id` | string | UUID do fornecedor |
 | `tenant_name` | string | Nome do fornecedor |
 | `tenant_logo` | string | URL do logotipo do fornecedor |
@@ -210,7 +210,7 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/Ox2VB6xxOL4HOVae
 | `executivo` | Executivo |
 
 <Note>
-  O campo `price_cents` representa o valor bruto do fornecedor. A margem configurada no GDS será aplicada ao criar o orçamento. Veja [Orçamentos](/partner/quotes) para mais detalhes.
+  O campo `price_cents` representa o valor bruto do fornecedor **em reais** (apesar do nome). Passe esse valor diretamente em `selectedVehicle.priceCents` ao criar o orçamento — o GDS converte para centavos internamente e aplica a margem. Veja [Orçamentos](/partner/quotes) para mais detalhes.
 </Note>
 
 ---

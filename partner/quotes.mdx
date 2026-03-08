@@ -1,105 +1,353 @@
 ---
-title: "Orcamentos"
-description: "Crie e consulte orcamentos de fretamento"
+title: "Orçamentos"
+description: "Crie e consulte orçamentos de fretamento"
 ---
 
-Um orcamento (quote) e criado a partir dos resultados de uma busca de veiculos. Ele representa uma proposta de fretamento para um cliente, com o preco do fornecedor acrescido da margem configurada.
+Um orçamento (quote) é criado a partir dos resultados de uma busca de veículos. Ele representa uma proposta de fretamento para um cliente, com o preço do fornecedor acrescido da margem configurada.
 
 ## Endpoints
 
-| Metodo | Endpoint | Descricao |
+| Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `POST` | `/quotes` | Criar orcamento |
-| `GET` | `/quotes` | Listar orcamentos |
-| `GET` | `/quotes/{id}` | Buscar orcamento por ID |
+| `POST` | `/quotes` | Criar orçamento |
+| `GET` | `/quotes` | Listar orçamentos |
+| `GET` | `/quotes/{id}` | Buscar orçamento por ID |
 
 ---
 
-## Criar orcamento
+## Criar orçamento
 
-Para criar um orcamento, voce precisa do `search_id` e do `id` do veiculo escolhido nos resultados da busca.
+O payload é construído a partir dos dados retornados pela [busca de veículos](/partner/search). Use os campos `trip` e `vehicles` do resultado do polling.
+
+### Campos da requisição
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `customer_id` | integer | Sim | ID do cliente no GDS |
+| `simpleTrip` | object | Sim | Dados da viagem (veja abaixo) |
+| `selectedVehicle` | object | Sim | Veículo escolhido nos resultados |
+| `selectedVehicle.id` | integer | Sim | ID do veículo |
+| `selectedVehicle.priceCents` | number | Sim | Preço do veículo (`price_cents` retornado pela busca) |
+| `selectedVehicle.tenant_id` | string | Sim | UUID do fornecedor (`tenant_id` retornado pela busca) |
+| `customRouter` | array | Só para `customtrip` | Array de paradas do roteiro (veja abaixo) |
+| `search_id` | string | Não | ID da busca de origem (vincula orçamento à busca) |
+| `default_margin_percentage` | number | Não | Margem em percentual (ex: `15` para 15%). Se omitido, usa a margem padrão configurada na conta. |
+
+#### Objeto `simpleTrip`
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `tripType` | string | Sim | Tipo da viagem: `onewaytrip`, `roundtrip`, `customtrip`, `hourtrip` |
+| `origin` | object | Sim | Local de partida (use os dados retornados pelo polling da busca) |
+| `origin.address` | string | Sim | Endereço completo |
+| `origin.city` | string | Sim | Cidade |
+| `origin.date` | string | Sim | Data de partida no formato `DD/MM/YYYY` |
+| `origin.time` | string | Sim | Horário de partida no formato `HH:MM` |
+| `origin.lat` | string | Sim | Latitude |
+| `origin.lng` | string | Sim | Longitude |
+| `origin.address_components` | object | Sim | `state`, `state_short`, `city` |
+| `destination` | object | Sim | Local de chegada (mesma estrutura de `origin`) |
+| `destination.date` | string | Sim | Para `roundtrip`: data de retorno. Para `onewaytrip`: data de chegada. |
+
+---
+
+## Exemplos por tipo de viagem
+
+### Ida simples (`onewaytrip`)
 
 ```bash
 curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
-  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Authorization: Bearer SUA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
-    "search_id": "srch_01jk2m3n4p5q6r7s",
-    "vehicle_id": "veh_abc123",
-    "default_margin_percentage": 15
+    "customer_id": 5,
+    "search_id": "Ox2VB6xxOL4HOVae",
+    "default_margin_percentage": 15,
+    "simpleTrip": {
+      "tripType": "onewaytrip",
+      "origin": {
+        "address": "Peruíbe, SP, Brasil",
+        "city": "Peruíbe",
+        "date": "15/04/2026",
+        "time": "10:00",
+        "lat": "-24.3182917",
+        "lng": "-46.9940600",
+        "address_components": {
+          "state": "São Paulo",
+          "state_short": "SP",
+          "city": "Peruíbe"
+        }
+      },
+      "destination": {
+        "address": "Aparecida de Goiânia, GO, Brasil",
+        "city": "Aparecida de Goiânia",
+        "date": "15/04/2026",
+        "time": "10:00",
+        "lat": "-16.8226787",
+        "lng": "-49.2473476",
+        "address_components": {
+          "state": "Goiás",
+          "state_short": "GO",
+          "city": "Aparecida de Goiânia"
+        }
+      }
+    },
+    "selectedVehicle": {
+      "id": 28,
+      "priceCents": 41586.16,
+      "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5"
+    }
   }'
 ```
 
-### Campos da requisicao
+---
 
-| Campo | Tipo | Obrigatorio | Descricao |
-|-------|------|-------------|-----------|
-| `customer_id` | string | Sim | ID do cliente no GDS |
-| `search_id` | string | Sim | ID da busca realizada |
-| `vehicle_id` | string | Sim | ID do veiculo escolhido nos resultados |
-| `default_margin_percentage` | number | Nao | Margem em percentual (ex: `15` para 15%). Se omitido, usa a margem padrao configurada na conta. |
+### Ida e volta (`roundtrip`)
 
-### Como a margem e aplicada
+Para ida e volta, use `tripType: "roundtrip"` e informe datas diferentes em `origin` (partida) e `destination` (retorno). O preço do veículo já contempla a viagem completa de ida e volta.
 
-O `price_cents` do veiculo e o valor bruto do fornecedor. O GDS aplica a margem sobre esse valor:
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
+  -H "Authorization: Bearer SUA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": 5,
+    "search_id": "Ox2VB6xxOL4HOVae",
+    "default_margin_percentage": 15,
+    "simpleTrip": {
+      "tripType": "roundtrip",
+      "origin": {
+        "address": "São Paulo, SP, Brasil",
+        "city": "São Paulo",
+        "date": "15/04/2026",
+        "time": "08:00",
+        "lat": "-23.5505199",
+        "lng": "-46.6333094",
+        "address_components": {
+          "state": "São Paulo",
+          "state_short": "SP",
+          "city": "São Paulo"
+        }
+      },
+      "destination": {
+        "address": "Rio de Janeiro, RJ, Brasil",
+        "city": "Rio de Janeiro",
+        "date": "18/04/2026",
+        "time": "08:00",
+        "lat": "-22.9068467",
+        "lng": "-43.1728965",
+        "address_components": {
+          "state": "Rio de Janeiro",
+          "state_short": "RJ",
+          "city": "Rio de Janeiro"
+        }
+      }
+    },
+    "selectedVehicle": {
+      "id": 28,
+      "priceCents": 85000.00,
+      "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5"
+    }
+  }'
+```
+
+<Note>
+  Em `roundtrip`, `origin.date` é a data de ida e `destination.date` é a data de retorno. O veículo realiza ambos os trajetos (um único item no orçamento).
+</Note>
+
+---
+
+### Roteiro personalizado (`customtrip`)
+
+Para roteiros com múltiplas paradas, use `tripType: "customtrip"` e inclua o array `customRouter`. O `origin` deve ser a primeira parada e o `destination` a última.
+
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
+  -H "Authorization: Bearer SUA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "customer_id": 5,
+    "search_id": "Ox2VB6xxOL4HOVae",
+    "default_margin_percentage": 15,
+    "simpleTrip": {
+      "tripType": "customtrip",
+      "origin": {
+        "address": "São Paulo, SP, Brasil",
+        "city": "São Paulo",
+        "date": "15/04/2026",
+        "time": "07:00",
+        "lat": "-23.5505199",
+        "lng": "-46.6333094",
+        "address_components": {
+          "state": "São Paulo",
+          "state_short": "SP",
+          "city": "São Paulo"
+        }
+      },
+      "destination": {
+        "address": "Ribeirão Preto, SP, Brasil",
+        "city": "Ribeirão Preto",
+        "date": "15/04/2026",
+        "time": "15:00",
+        "lat": "-21.1774886",
+        "lng": "-47.8103017",
+        "address_components": {
+          "state": "São Paulo",
+          "state_short": "SP",
+          "city": "Ribeirão Preto"
+        }
+      }
+    },
+    "customRouter": [
+      {
+        "address": "São Paulo, SP, Brasil",
+        "lat": "-23.5505199",
+        "lng": "-46.6333094",
+        "date": "15/04/2026",
+        "time": "07:00"
+      },
+      {
+        "address": "Campinas, SP, Brasil",
+        "lat": "-22.9056099",
+        "lng": "-47.0607605",
+        "date": "15/04/2026",
+        "time": "09:00"
+      },
+      {
+        "address": "Ribeirão Preto, SP, Brasil",
+        "lat": "-21.1774886",
+        "lng": "-47.8103017",
+        "date": "15/04/2026",
+        "time": "15:00"
+      }
+    ],
+    "selectedVehicle": {
+      "id": 28,
+      "priceCents": 62000.00,
+      "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5"
+    }
+  }'
+```
+
+#### Campos de cada parada em `customRouter`
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `address` | string | Endereço completo da parada |
+| `lat` | string | Latitude |
+| `lng` | string | Longitude |
+| `date` | string | Data da parada no formato `DD/MM/YYYY` |
+| `time` | string | Horário da parada no formato `HH:MM` |
+
+---
+
+## Como a margem é aplicada
+
+O `priceCents` do veículo é o valor bruto do fornecedor (em reais). O GDS converte internamente e aplica a margem:
 
 ```
-total_cents = price_cents * (1 + default_margin_percentage / 100)
-
-Exemplo: R$ 1.800,00 * 1,15 = R$ 2.070,00
-→ price_cents: 180000
-→ total_cents: 207000
-→ margin_value_cents: 27000
+subtotal = priceCents (convertido para centavos)
+service_fee = subtotal × service_fee_percentage
+margin = subtotal × margin_percentage
+total = subtotal + service_fee + margin
 ```
 
-### Resposta
+Exemplo com `priceCents: 41586.16` e margem de 15%:
+```
+subtotal:     R$ 41.586,16  (4.158.616 centavos)
+service_fee:  R$  2.911,03  (7% padrão)
+margin:       R$  6.237,92  (15%)
+total:        R$ 50.735,11
+```
+
+---
+
+## Resposta
 
 ```json
 {
+  "success": true,
   "data": {
-    "id": "qt_01jk2m3n4p5q6r7s",
-    "status": "open",
-    "trip_type": "onewaytrip",
-    "trip_date": "2026/04/15",
-    "trip_time": "10:00",
-    "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
-    "destination": "Av. Paulista, 1000, São Paulo - SP",
-    "passengers": 40,
-    "vehicle_name": "Ônibus Executivo 50 lugares",
-    "vehicle_capacity": 50,
-    "tenant_name": "Viação Exemplo",
-    "price_cents": 180000,
-    "margin_percentage": 15,
-    "margin_value_cents": 27000,
-    "total_cents": 207000,
+    "id": 76,
+    "uuid": "621cebbd-cf60-4ab5-a6d6-8dd9545cb9d6",
     "customer": {
-      "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
-      "name": "Empresa Exemplo Ltda"
+      "id": 5,
+      "uuid": "6039e108-f7ac-4b19-9a2c-bbf822d6de18",
+      "name": "AC DA SILVA",
+      "email": "email@email.com.br",
+      "phone": null
     },
-    "created_at": "2026-03-06T14:30:00.000000Z"
-  }
+    "pricing": {
+      "subtotal": 4158616,
+      "total": 5073511,
+      "discount": 0,
+      "addition": 0,
+      "service_fee_percentage": "7.00",
+      "service_fee_value": 291103,
+      "margin_percentage": "15.00",
+      "margin_value": 623792
+    },
+    "status": "pending",
+    "items": [
+      {
+        "id": 83,
+        "uuid": "be1734d6-05b6-4501-9ce7-bd5bc3ade306",
+        "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5",
+        "vehicle_id": 28,
+        "type": "onewaytrip",
+        "price_cents": 4158616,
+        "trip_details": {
+          "origin": {
+            "address": "Peruíbe, SP, Brasil",
+            "city": "Peruíbe",
+            "date": "15/04/2026",
+            "time": "10:00",
+            "lat": "-24.3182917",
+            "lng": "-46.9940600"
+          },
+          "destination": {
+            "address": "Aparecida de Goiânia, GO, Brasil",
+            "city": "Aparecida de Goiânia",
+            "date": "15/04/2026",
+            "time": "10:00",
+            "lat": "-16.8226787",
+            "lng": "-49.2473476"
+          }
+        },
+        "tenant_display": {
+          "name": "Viação Exemplo",
+          "logo": null
+        },
+        "created_at": "2026-03-08T14:50:30-03:00"
+      }
+    ],
+    "created_at": "2026-03-08T14:50:30-03:00",
+    "updated_at": "2026-03-08T14:50:40-03:00"
+  },
+  "message": "Orçamento criado com sucesso"
 }
 ```
 
 ### Campos da resposta
 
-| Campo | Tipo | Descricao |
+| Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `id` | string | ID do orcamento |
-| `status` | string | Status do orcamento (veja abaixo) |
-| `price_cents` | integer | Valor bruto do fornecedor em centavos |
-| `margin_percentage` | number | Percentual de margem aplicado |
-| `margin_value_cents` | integer | Valor absoluto da margem em centavos |
-| `total_cents` | integer | Valor total com margem em centavos |
+| `id` | integer | ID do orçamento |
+| `uuid` | string | UUID do orçamento |
+| `status` | string | Status do orçamento (veja abaixo) |
+| `pricing.subtotal` | integer | Valor bruto em centavos |
+| `pricing.service_fee_value` | integer | Taxa de serviço em centavos |
+| `pricing.margin_value` | integer | Margem em centavos |
+| `pricing.total` | integer | Valor total em centavos |
+| `items` | array | Itens do orçamento (um por trecho da viagem) |
 
 ---
 
-## Status do orcamento
+## Status do orçamento
 
-| Status | Descricao |
+| Status | Descrição |
 |--------|-----------|
-| `open` | Orcamento criado, aguardando aprovacao do cliente |
+| `pending` | Orçamento criado, aguardando aprovação do cliente |
 | `approved` | Aprovado pelo cliente |
 | `rejected` | Recusado pelo cliente |
 | `converted` | Convertido em pedido |
@@ -107,58 +355,29 @@ Exemplo: R$ 1.800,00 * 1,15 = R$ 2.070,00
 
 ---
 
-## Listar orcamentos
+## Listar orçamentos
 
 ```bash
-curl -X GET "https://gds.fretatech.com.br/api/partner/v1/quotes?status=open&customer_id=01jk2m..." \
-  -H "Authorization: Bearer SEU_TOKEN"
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/quotes?status=pending&customer_id=5" \
+  -H "Authorization: Bearer SUA_API_KEY"
 ```
 
-### Parametros de filtro
+### Parâmetros de filtro
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
-| `status` | string | Filtra por status do orcamento |
-| `customer_id` | string | Filtra por cliente |
+| `status` | string | Filtra por status do orçamento |
+| `customer_id` | integer | Filtra por cliente |
 | `date_from` | string | Data inicial (`YYYY-MM-DD`) |
 | `date_to` | string | Data final (`YYYY-MM-DD`) |
-| `page` | integer | Numero da pagina |
-| `per_page` | integer | Itens por pagina (maximo: 100) |
-
-### Resposta
-
-```json
-{
-  "data": [
-    {
-      "id": "qt_01jk2m3n4p5q6r7s",
-      "status": "open",
-      "trip_date": "2026/04/15",
-      "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
-      "destination": "Av. Paulista, 1000, São Paulo - SP",
-      "total_cents": 207000,
-      "customer": {
-        "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
-        "name": "Empresa Exemplo Ltda"
-      },
-      "created_at": "2026-03-06T14:30:00.000000Z"
-    }
-  ],
-  "meta": {
-    "current_page": 1,
-    "per_page": 15,
-    "total": 8
-  }
-}
-```
 
 ---
 
-## Buscar orcamento por ID
+## Buscar orçamento por ID
 
 ```bash
-curl -X GET https://gds.fretatech.com.br/api/partner/v1/quotes/qt_01jk2m3n4p5q6r7s \
-  -H "Authorization: Bearer SEU_TOKEN"
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/quotes/76 \
+  -H "Authorization: Bearer SUA_API_KEY"
 ```
 
-Retorna o objeto completo do orcamento, identico ao retorno da criacao.
+Retorna o objeto completo do orçamento, idêntico ao retorno da criação.
