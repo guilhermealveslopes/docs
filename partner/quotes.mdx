@@ -5,6 +5,12 @@ description: "Crie e consulte orçamentos de fretamento"
 
 Um orçamento (quote) é criado a partir dos resultados de uma busca de veículos. Ele representa uma proposta de fretamento para um cliente, com o preço do fornecedor acrescido da margem configurada.
 
+<Warning>
+  **Busca obrigatória.** Não é possível criar um orçamento sem uma busca prévia. Os preços são sempre extraídos do resultado da busca armazenado — o parceiro não informa valores.
+
+  **Validade de 30 minutos.** A busca expira 30 minutos após a conclusão do polling. Após esse prazo, realize uma nova busca antes de criar o orçamento.
+</Warning>
+
 ## Endpoints
 
 | Método | Endpoint | Descrição |
@@ -17,43 +23,33 @@ Um orçamento (quote) é criado a partir dos resultados de uma busca de veículo
 
 ## Criar orçamento
 
-O payload é construído a partir dos dados retornados pela [busca de veículos](/partner/search). Use os campos `trip` e `vehicles` do resultado do polling.
+O payload usa os dados retornados pelo [polling da busca](/partner/search). Informe o `search_id` e o veículo escolhido; os preços e os dados de rota são extraídos automaticamente do resultado armazenado.
 
 ### Campos da requisição
 
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| `customer_id` | integer | Sim | ID do cliente no GDS |
-| `simpleTrip` | object | Sim | Dados da viagem (veja abaixo) |
+| `customer_id` | integer | Sim | ID do cliente no CGD |
+| `search_id` | string | Sim | `search_id` retornado pelo endpoint de busca |
 | `selectedVehicle` | object | Sim | Veículo escolhido nos resultados |
-| `selectedVehicle.id` | integer | Sim | ID do veículo |
-| `selectedVehicle.priceCents` | number | Sim | Preço do veículo (`price_cents` retornado pela busca) |
-| `selectedVehicle.tenant_id` | string | Sim | UUID do fornecedor (`tenant_id` retornado pela busca) |
-| `customRouter` | array | Só para `customtrip` | Array de paradas do roteiro (veja abaixo) |
-| `search_id` | string | Não | ID da busca de origem (vincula orçamento à busca) |
-| `default_margin_percentage` | number | Não | Margem em percentual (ex: `15` para 15%). Se omitido, usa a margem padrão configurada na conta. |
+| `selectedVehicle.id` | integer | Sim | `id` do veículo retornado pela busca |
+| `selectedVehicle.tenant_id` | string (UUID) | Sim | `tenant_id` do veículo retornado pela busca |
+| `customRouter` | array | Só para `customtrip` | Paradas do roteiro (veja abaixo) |
+| `default_margin_percentage` | number | Não | Margem em percentual (ex: `15`). Se omitido, usa a margem padrão configurada na conta. |
 
-#### Objeto `simpleTrip`
-
-| Campo | Tipo | Obrigatório | Descrição |
-|-------|------|-------------|-----------|
-| `tripType` | string | Sim | Tipo da viagem: `onewaytrip`, `roundtrip`, `customtrip`, `hourtrip` |
-| `origin` | object | Sim | Local de partida (use os dados retornados pelo polling da busca) |
-| `origin.address` | string | Sim | Endereço completo |
-| `origin.city` | string | Sim | Cidade |
-| `origin.date` | string | Sim | Data de partida no formato `DD/MM/YYYY` |
-| `origin.time` | string | Sim | Horário de partida no formato `HH:MM` |
-| `origin.lat` | string | Sim | Latitude |
-| `origin.lng` | string | Sim | Longitude |
-| `origin.address_components` | object | Sim | `state`, `state_short`, `city` |
-| `destination` | object | Sim | Local de chegada (mesma estrutura de `origin`) |
-| `destination.date` | string | Sim | Para `roundtrip`: data de retorno. Para `onewaytrip`: data de chegada. |
+<Note>
+  Os campos `simpleTrip` (origin, destination, tripType) e o preço do veículo são extraídos automaticamente da busca. O parceiro não precisa — e não pode — enviá-los.
+</Note>
 
 ---
 
 ## Exemplos por tipo de viagem
 
-### Ida simples (`onewaytrip`)
+O `tripType` da busca define o tipo do orçamento automaticamente. Não é necessário informá-lo na criação do orçamento.
+
+### Ida simples, ida e volta ou hora (`onewaytrip` / `roundtrip` / `hourtrip`)
+
+Para todos esses tipos, o payload é idêntico — o tipo é herdado da busca.
 
 ```bash
 curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
@@ -61,105 +57,20 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
   -H "Content-Type: application/json" \
   -d '{
     "customer_id": 5,
-    "search_id": "Ox2VB6xxOL4HOVae",
+    "search_id": "dMeazSmRgEikWVxe",
     "default_margin_percentage": 15,
-    "simpleTrip": {
-      "tripType": "onewaytrip",
-      "origin": {
-        "address": "Peruíbe, SP, Brasil",
-        "city": "Peruíbe",
-        "date": "15/04/2026",
-        "time": "10:00",
-        "lat": "-24.3182917",
-        "lng": "-46.9940600",
-        "address_components": {
-          "state": "São Paulo",
-          "state_short": "SP",
-          "city": "Peruíbe"
-        }
-      },
-      "destination": {
-        "address": "Aparecida de Goiânia, GO, Brasil",
-        "city": "Aparecida de Goiânia",
-        "date": "15/04/2026",
-        "time": "10:00",
-        "lat": "-16.8226787",
-        "lng": "-49.2473476",
-        "address_components": {
-          "state": "Goiás",
-          "state_short": "GO",
-          "city": "Aparecida de Goiânia"
-        }
-      }
-    },
     "selectedVehicle": {
       "id": 28,
-      "priceCents": 41586.16,
       "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5"
     }
   }'
 ```
-
----
-
-### Ida e volta (`roundtrip`)
-
-Para ida e volta, use `tripType: "roundtrip"` e informe datas diferentes em `origin` (partida) e `destination` (retorno). O preço do veículo já contempla a viagem completa de ida e volta.
-
-```bash
-curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
-  -H "Authorization: Bearer SUA_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_id": 5,
-    "search_id": "Ox2VB6xxOL4HOVae",
-    "default_margin_percentage": 15,
-    "simpleTrip": {
-      "tripType": "roundtrip",
-      "origin": {
-        "address": "São Paulo, SP, Brasil",
-        "city": "São Paulo",
-        "date": "15/04/2026",
-        "time": "08:00",
-        "lat": "-23.5505199",
-        "lng": "-46.6333094",
-        "address_components": {
-          "state": "São Paulo",
-          "state_short": "SP",
-          "city": "São Paulo"
-        }
-      },
-      "destination": {
-        "address": "Rio de Janeiro, RJ, Brasil",
-        "city": "Rio de Janeiro",
-        "date": "18/04/2026",
-        "time": "08:00",
-        "lat": "-22.9068467",
-        "lng": "-43.1728965",
-        "address_components": {
-          "state": "Rio de Janeiro",
-          "state_short": "RJ",
-          "city": "Rio de Janeiro"
-        }
-      }
-    },
-    "selectedVehicle": {
-      "id": 28,
-      "priceCents": 85000.00,
-      "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5"
-    }
-  }'
-```
-
-<Note>
-  Em `roundtrip`, `origin.date` é a data de ida e `destination.date` é a data de retorno. O veículo realiza ambos os trajetos (um único item no orçamento).
-</Note>
 
 ---
 
 ### Roteiro personalizado (`customtrip`)
 
-Para roteiros com múltiplas paradas, use `tripType: "customtrip"` e inclua o array `customRouter`. O `origin` deve ser a primeira parada e o `destination` a última.
+Para roteiros com múltiplas paradas, inclua o array `customRouter` com as paradas em ordem. A busca deve ter sido feita com `trip_type: "customtrip"`.
 
 ```bash
 curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
@@ -169,34 +80,9 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
     "customer_id": 5,
     "search_id": "Ox2VB6xxOL4HOVae",
     "default_margin_percentage": 15,
-    "simpleTrip": {
-      "tripType": "customtrip",
-      "origin": {
-        "address": "São Paulo, SP, Brasil",
-        "city": "São Paulo",
-        "date": "15/04/2026",
-        "time": "07:00",
-        "lat": "-23.5505199",
-        "lng": "-46.6333094",
-        "address_components": {
-          "state": "São Paulo",
-          "state_short": "SP",
-          "city": "São Paulo"
-        }
-      },
-      "destination": {
-        "address": "Ribeirão Preto, SP, Brasil",
-        "city": "Ribeirão Preto",
-        "date": "15/04/2026",
-        "time": "15:00",
-        "lat": "-21.1774886",
-        "lng": "-47.8103017",
-        "address_components": {
-          "state": "São Paulo",
-          "state_short": "SP",
-          "city": "Ribeirão Preto"
-        }
-      }
+    "selectedVehicle": {
+      "id": 28,
+      "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5"
     },
     "customRouter": [
       {
@@ -220,12 +106,7 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
         "date": "15/04/2026",
         "time": "15:00"
       }
-    ],
-    "selectedVehicle": {
-      "id": 28,
-      "priceCents": 62000.00,
-      "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5"
-    }
+    ]
   }'
 ```
 
@@ -241,24 +122,35 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/quotes \
 
 ---
 
-## Como a margem é aplicada
+## Como o preço é calculado
 
-O `priceCents` do veículo é o valor bruto do fornecedor (em reais). O GDS converte internamente e aplica a margem:
+O preço final exibido ao cliente inclui a taxa central da viação, a taxa de serviço do CGD e a margem do parceiro:
 
 ```
-subtotal = priceCents (convertido para centavos)
-service_fee = subtotal × service_fee_percentage
-margin = subtotal × margin_percentage
-total = subtotal + service_fee + margin
+base          = priceCents do veículo (extraído da busca, já inclui a taxa central da viação)
+              + despesas do motorista (quando aplicável)
+service_fee   = base × service_fee_percentage   (padrão: 7%)
+margin        = base × margin_percentage
+total         = base + service_fee + margin
 ```
 
-Exemplo com `priceCents: 41586.16` e margem de 15%:
+Exemplo com veículo de R$ 17.718,81 (já com taxa central 10%), despesas R$ 280, margem 15%:
 ```
-subtotal:     R$ 41.586,16  (4.158.616 centavos)
-service_fee:  R$  2.911,03  (7% padrão)
-margin:       R$  6.237,92  (15%)
-total:        R$ 50.735,11
+base:         R$ 17.998,81  (17.718,81 + 280,00)
+service_fee:  R$  1.259,92  (7%)
+margin:       R$  2.699,82  (15%)
+total:        R$ 21.958,55
 ```
+
+---
+
+## Erros possíveis na criação
+
+| HTTP | Mensagem | Causa |
+|------|----------|-------|
+| `404` | Busca não encontrada | `search_id` inválido |
+| `422` | Busca expirada | Mais de 30 min desde a conclusão da busca. Refaça a busca. |
+| `422` | Veículo não encontrado nesta busca | `vehicle_id` ou `tenant_id` incorreto |
 
 ---
 
@@ -278,14 +170,14 @@ total:        R$ 50.735,11
       "phone": null
     },
     "pricing": {
-      "subtotal": 4158616,
-      "total": 5073511,
+      "subtotal": 1799881,
+      "total": 2195855,
       "discount": 0,
       "addition": 0,
       "service_fee_percentage": "7.00",
-      "service_fee_value": 291103,
+      "service_fee_value": 125992,
       "margin_percentage": "15.00",
-      "margin_value": 623792
+      "margin_value": 269982
     },
     "status": "pending",
     "items": [
@@ -295,34 +187,34 @@ total:        R$ 50.735,11
         "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5",
         "vehicle_id": 28,
         "type": "onewaytrip",
-        "price_cents": 4158616,
+        "price_cents": 1771881,
         "trip_details": {
           "origin": {
             "address": "Peruíbe, SP, Brasil",
             "city": "Peruíbe",
-            "date": "15/04/2026",
-            "time": "10:00",
+            "date": "08/03/2026",
+            "time": "21:00",
             "lat": "-24.3182917",
             "lng": "-46.9940600"
           },
           "destination": {
-            "address": "Aparecida de Goiânia, GO, Brasil",
-            "city": "Aparecida de Goiânia",
-            "date": "15/04/2026",
-            "time": "10:00",
-            "lat": "-16.8226787",
-            "lng": "-49.2473476"
+            "address": "Aparecida, SP, Brasil",
+            "city": "Aparecida",
+            "date": "09/03/2026",
+            "time": "07:00",
+            "lat": "-22.8469289",
+            "lng": "-45.2316803"
           }
         },
         "tenant_display": {
-          "name": "Viação Exemplo",
+          "name": "Viação Mimo - Várzea Paulista",
           "logo": null
         },
-        "created_at": "2026-03-08T14:50:30-03:00"
+        "created_at": "2026-03-08T17:30:00-03:00"
       }
     ],
-    "created_at": "2026-03-08T14:50:30-03:00",
-    "updated_at": "2026-03-08T14:50:40-03:00"
+    "created_at": "2026-03-08T17:30:00-03:00",
+    "updated_at": "2026-03-08T17:30:10-03:00"
   },
   "message": "Orçamento criado com sucesso"
 }
@@ -335,7 +227,7 @@ total:        R$ 50.735,11
 | `id` | integer | ID do orçamento |
 | `uuid` | string | UUID do orçamento |
 | `status` | string | Status do orçamento (veja abaixo) |
-| `pricing.subtotal` | integer | Valor bruto em centavos |
+| `pricing.subtotal` | integer | Subtotal em centavos (base + despesas motorista) |
 | `pricing.service_fee_value` | integer | Taxa de serviço em centavos |
 | `pricing.margin_value` | integer | Margem em centavos |
 | `pricing.total` | integer | Valor total em centavos |

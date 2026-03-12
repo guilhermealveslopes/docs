@@ -1,13 +1,13 @@
 ---
 title: "Autenticação"
-description: "Como autenticar suas requisições na GDS"
+description: "Como autenticar suas requisições na CGD"
 ---
 
-A GDS utiliza autenticação via **API Key estática**. A chave é gerada nas configurações do GDS e deve ser enviada em todas as requisições.
+O CGD utiliza autenticação via **API Key estática**. A chave é gerada nas configurações do CGD e deve ser enviada em todas as requisições.
 
 ## Onde encontrar sua chave
 
-Acesse **Configurações → API Partner** no painel do GDS. Você verá a chave atual e um botão para copiá-la ou gerar uma nova.
+Acesse **Configurações → API Partner** no painel do CGD. Você verá a chave atual e um botão para copiá-la ou gerar uma nova.
 
 <Note>
   Caso a seção "API Partner" não apareça nas configurações, entre em contato com o suporte para ativar o acesso.
@@ -35,7 +35,7 @@ gds_4f3a8b9c2d1e7f0a5b6c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9
 |----------|------|----------|
 | Header `Authorization` ausente | 401 | `API key não fornecida. Use o header Authorization: Bearer {api_key}.` |
 | Chave inválida | 401 | `Chave de API inválida.` |
-| Nenhuma chave configurada no GDS | 401 | `Nenhuma chave de API configurada. Gere uma chave nas Configurações.` |
+| Nenhuma chave configurada no CGD | 401 | `Nenhuma chave de API configurada. Gere uma chave nas Configurações.` |
 
 ## Gerar nova chave
 

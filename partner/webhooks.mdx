@@ -3,7 +3,7 @@ title: "Webhooks"
 description: "Receba eventos em tempo real no seu sistema"
 ---
 
-Webhooks permitem que o GDS notifique o seu sistema automaticamente quando eventos importantes ocorrem, como mudancas de status de pedidos ou atribuicao de motorista. Voce registra uma URL e o GDS envia requisicoes HTTP POST para ela com os dados do evento.
+Webhooks permitem que o CGD notifique o seu sistema automaticamente quando eventos importantes ocorrem, como mudancas de status de pedidos ou atribuicao de motorista. Voce registra uma URL e o CGD envia requisicoes HTTP POST para ela com os dados do evento.
 
 ## Endpoints
 
@@ -72,7 +72,7 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/webhooks \
 
 ## Estrutura do payload
 
-Quando um evento ocorre, o GDS envia uma requisicao `POST` para a URL cadastrada com o seguinte payload:
+Quando um evento ocorre, o CGD envia uma requisicao `POST` para a URL cadastrada com o seguinte payload:
 
 ```json
 {
@@ -102,7 +102,7 @@ Quando um evento ocorre, o GDS envia uma requisicao `POST` para a URL cadastrada
 
 ## Verificacao de assinatura
 
-Cada requisicao de webhook inclui o header `X-Signature` com a assinatura HMAC-SHA256 do payload. **Voce deve verificar essa assinatura** para garantir que a requisicao veio do GDS e nao foi adulterada.
+Cada requisicao de webhook inclui o header `X-Signature` com a assinatura HMAC-SHA256 do payload. **Voce deve verificar essa assinatura** para garantir que a requisicao veio do CGD e nao foi adulterada.
 
 ### Como calcular a assinatura esperada
 
@@ -133,7 +133,7 @@ function verifyWebhookSignature(payload, signature, secret) {
 // Exemplo de uso em Express.js
 app.post('/webhooks/gds', express.raw({ type: 'application/json' }), (req, res) => {
   const signature = req.headers['x-signature'];
-  const secret = process.env.GDS_WEBHOOK_SECRET;
+  const secret = process.env.CGD_WEBHOOK_SECRET;
 
   if (!verifyWebhookSignature(req.body, signature, secret)) {
     return res.status(401).json({ error: 'Assinatura invalida' });
@@ -169,7 +169,7 @@ Route::post('/webhooks/gds', function (Request $request) {
     }
 
     $event = json_decode($payload, true);
-    Log::info('GDS webhook recebido', ['event' => $event['event']]);
+    Log::info('CGD webhook recebido', ['event' => $event['event']]);
 
     // Processe o evento aqui
 
@@ -185,7 +185,7 @@ Route::post('/webhooks/gds', function (Request $request) {
 
 ## Retentativas
 
-O GDS reenvia o evento automaticamente em caso de falha (timeout ou status HTTP diferente de 2xx):
+O CGD reenvia o evento automaticamente em caso de falha (timeout ou status HTTP diferente de 2xx):
 
 | Tentativa | Intervalo |
 |-----------|-----------|

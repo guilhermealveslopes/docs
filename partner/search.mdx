@@ -3,9 +3,9 @@ title: "Busca de Veículos"
 description: "Consulte disponibilidade e preços em tempo real"
 ---
 
-A busca de veículos é **assíncrona**: você inicia a busca e depois consulta os resultados por polling. Isso acontece porque o GDS consulta múltiplos fornecedores em paralelo, e cada um pode levar alguns segundos para responder.
+A busca de veículos é **assíncrona**: você inicia a busca e depois consulta os resultados por polling. Isso acontece porque o CGD consulta múltiplos fornecedores em paralelo, e cada um pode levar alguns segundos para responder.
 
-O GDS resolve os endereços automaticamente via FretaMaps — você não precisa fornecer coordenadas, basta enviar o endereço em texto livre.
+O CGD resolve os endereços automaticamente via FretaMaps — você não precisa fornecer coordenadas, basta enviar o endereço em texto livre.
 
 ## Endpoints
 
@@ -40,17 +40,35 @@ Recomendamos polling a cada **2 segundos**, com timeout máximo de **30 segundos
 
 ## Iniciar busca
 
+**Ida simples:**
 ```bash
 curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
   -H "Authorization: Bearer SUA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
-    "destination": "Av. Paulista, 1000, São Paulo - SP",
+    "origin": "Peruíbe, SP",
+    "destination": "Aparecida de Goiânia, GO",
     "trip_date": "2026/04/15",
     "trip_time": "10:00",
     "trip_type": "onewaytrip",
     "passengers": 40
+  }'
+```
+
+**Ida e volta:**
+```bash
+curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
+  -H "Authorization: Bearer SUA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "origin": "São Paulo, SP",
+    "destination": "Rio de Janeiro, RJ",
+    "trip_date": "2026/04/15",
+    "trip_time": "08:00",
+    "trip_type": "roundtrip",
+    "return_date": "2026/04/18",
+    "return_time": "08:00",
+    "passengers": 44
   }'
 ```
 
@@ -60,10 +78,12 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
 |-------|------|-------------|-----------|
 | `origin` | string | Sim | Endereço de origem em texto livre |
 | `destination` | string | Sim | Endereço de destino em texto livre |
-| `trip_date` | string | Sim | Data da viagem no formato `YYYY/MM/DD` |
+| `trip_date` | string | Sim | Data de ida no formato `YYYY/MM/DD` |
 | `trip_time` | string | Sim | Horário de partida no formato `HH:MM` |
 | `trip_type` | string | Sim | Tipo da viagem (veja tabela abaixo) |
 | `passengers` | integer | Não | Número de passageiros |
+| `return_date` | string | Só para `roundtrip` | Data de retorno no formato `YYYY/MM/DD` (deve ser ≥ `trip_date`) |
+| `return_time` | string | Não | Horário de retorno no formato `HH:MM` (padrão: mesmo que `trip_time`) |
 
 ### Tipos de viagem
 
@@ -97,7 +117,7 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/search \
 }
 ```
 
-A resposta inclui os endereços resolvidos pelo GDS (com coordenadas confirmadas) para você validar se o local foi interpretado corretamente.
+A resposta inclui os endereços resolvidos pelo CGD (com coordenadas confirmadas) para você validar se o local foi interpretado corretamente.
 
 ---
 
@@ -192,7 +212,7 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/Ox2VB6xxOL4HOVae
 | `attributes` | array | Lista de atributos/comodidades (`id` e `name`) |
 | `image_url` | string | URL da foto principal do veículo |
 | `gallery` | array | URLs das fotos adicionais do veículo |
-| `price_cents` | number | Preço em **reais** do fornecedor, sem margem GDS (ex: `41586.16` = R$ 41.586,16) |
+| `price_cents` | number | Preço em **reais** do fornecedor, sem margem CGD (ex: `41586.16` = R$ 41.586,16) |
 | `tenant_id` | string | UUID do fornecedor |
 | `tenant_name` | string | Nome do fornecedor |
 | `tenant_logo` | string | URL do logotipo do fornecedor |
@@ -210,7 +230,7 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/search/Ox2VB6xxOL4HOVae
 | `executivo` | Executivo |
 
 <Note>
-  O campo `price_cents` representa o valor bruto do fornecedor **em reais** (apesar do nome). Passe esse valor diretamente em `selectedVehicle.priceCents` ao criar o orçamento — o GDS converte para centavos internamente e aplica a margem. Veja [Orçamentos](/partner/quotes) para mais detalhes.
+  O campo `price_cents` representa o valor bruto do fornecedor **em reais** (apesar do nome). Passe esse valor diretamente em `selectedVehicle.priceCents` ao criar o orçamento — o CGD converte para centavos internamente e aplica a margem. Veja [Orçamentos](/partner/quotes) para mais detalhes.
 </Note>
 
 ---

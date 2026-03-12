@@ -1,15 +1,21 @@
 ---
 title: "Pedidos"
-description: "Converta orcamentos em pedidos e acompanhe o status"
+description: "Converta orçamentos em pedidos e acompanhe o status"
 ---
 
-Um pedido (order) e criado a partir de um orcamento aprovado. Ao criar o pedido, o GDS envia automaticamente a solicitacao para o fornecedor (tenant), que confirmara a disponibilidade e iniciara a operacao.
+Um pedido (order) é criado a partir de um orçamento. Ao criar o pedido, o CGD envia automaticamente a solicitação para o fornecedor (tenant), que confirmará a disponibilidade e iniciará a operação.
+
+<Warning>
+  **Orçamento obrigatório.** Não é possível criar um pedido sem um orçamento prévio. Todos os valores financeiros são derivados do orçamento — o parceiro não informa preços.
+
+  Um orçamento com status `converted` não pode ser usado novamente.
+</Warning>
 
 ## Endpoints
 
-| Metodo | Endpoint | Descricao |
+| Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `POST` | `/orders` | Criar pedido a partir de orcamento |
+| `POST` | `/orders` | Criar pedido a partir de orçamento |
 | `GET` | `/orders` | Listar pedidos |
 | `GET` | `/orders/{id}` | Buscar pedido por ID |
 
@@ -17,139 +23,165 @@ Um pedido (order) e criado a partir de um orcamento aprovado. Ao criar o pedido,
 
 ## Criar pedido
 
+### Campos da requisição
+
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| `customer_id` | integer | Sim | ID do cliente no CGD |
+| `quote_id` | integer | Sim | ID do orçamento a ser convertido em pedido |
+
 ```bash
 curl -X POST https://gds.fretatech.com.br/api/partner/v1/orders \
-  -H "Authorization: Bearer SEU_TOKEN" \
+  -H "Authorization: Bearer SUA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "quote_id": "qt_01jk2m3n4p5q6r7s"
+    "customer_id": 5,
+    "quote_id": 76
   }'
 ```
 
-### Campos da requisicao
-
-| Campo | Tipo | Obrigatorio | Descricao |
-|-------|------|-------------|-----------|
-| `quote_id` | string | Sim | ID do orcamento a ser convertido em pedido |
-
 <Note>
-  O orcamento deve estar com status `open` ou `approved` para ser convertido em pedido.
+  Os valores financeiros (preço, margem, taxa de serviço) são herdados diretamente do orçamento, que por sua vez foi calculado a partir da busca de disponibilidade.
 </Note>
 
-### Resposta
+---
+
+## Erros possíveis na criação
+
+| HTTP | Mensagem | Causa |
+|------|----------|-------|
+| `422` | Este orçamento já foi convertido em pedido | O `quote_id` informado já gerou um pedido anteriormente |
+
+---
+
+## Resposta
 
 ```json
 {
+  "success": true,
   "data": {
-    "id": "ord_01jk2m3n4p5q6r7s",
-    "status": "pending_invoice",
-    "quote_id": "qt_01jk2m3n4p5q6r7s",
-    "trip_type": "onewaytrip",
-    "trip_date": "2026/04/15",
-    "trip_time": "10:00",
-    "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
-    "destination": "Av. Paulista, 1000, São Paulo - SP",
-    "passengers": 40,
-    "vehicle_name": "Ônibus Executivo 50 lugares",
-    "tenant_name": "Viação Exemplo",
-    "price_cents": 180000,
-    "margin_percentage": 15,
-    "margin_value_cents": 27000,
-    "total_cents": 207000,
+    "id": 120,
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "customer": {
-      "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
-      "name": "Empresa Exemplo Ltda"
+      "id": 5,
+      "uuid": "6039e108-f7ac-4b19-9a2c-bbf822d6de18",
+      "name": "AC DA SILVA",
+      "email": "email@email.com.br",
+      "phone": null
     },
+    "pricing": {
+      "cost": 1610801,
+      "central_commission_percentage": "10.00",
+      "central_commission_value": 161080,
+      "service_price": 1771881,
+      "central_service_tax_percentage": "0.00",
+      "central_service_tax_value": 0,
+      "subtotal_amount": 1799881,
+      "markup_percentage": "0.00",
+      "markup_amount": 0,
+      "total_amount": 2195855,
+      "service_fee_percentage": "7.00",
+      "service_fee_value": 125992,
+      "margin_percentage": "15.00",
+      "margin_value": 269982
+    },
+    "status": "A Faturar",
+    "sync_status": "pending",
     "items": [
       {
-        "id": "item_01jk2m3n4p5q6r7s",
-        "service_status": "scheduled",
-        "trip_date": "2026/04/15",
-        "trip_time": "10:00"
+        "id": 215,
+        "tenant_id": "fb4a8f4c-617a-45f8-a2e9-0aebbc5cd0f5",
+        "vehicle_id": 28,
+        "vehicle_name": "Ônibus Semi-Leito 46 Lugares Motor Traseiro - Bela Vista",
+        "type": "onewaytrip",
+        "service_price": 1771881,
+        "total_amount": 2195855,
+        "origin_address": {
+          "address": "Peruíbe, SP, Brasil",
+          "city": "Peruíbe",
+          "lat": "-24.3182917",
+          "lng": "-46.9940600"
+        },
+        "destination_address": {
+          "address": "Aparecida, SP, Brasil",
+          "city": "Aparecida",
+          "lat": "-22.8469289",
+          "lng": "-45.2316803"
+        },
+        "start_date": "2026-03-09T07:00:00-03:00",
+        "end_date": "2026-03-09T07:00:00-03:00",
+        "status": "Programado"
       }
     ],
-    "created_at": "2026-03-06T14:30:00.000000Z"
-  }
+    "created_at": "2026-03-08T17:45:00-03:00",
+    "updated_at": "2026-03-08T17:45:00-03:00"
+  },
+  "message": "Pedido criado com sucesso"
 }
 ```
+
+### Campos da resposta
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `id` | integer | ID do pedido |
+| `uuid` | string | UUID do pedido |
+| `status` | string | Status atual do pedido (veja abaixo) |
+| `pricing.cost` | integer | Custo bruto do fornecedor em centavos |
+| `pricing.central_commission_value` | integer | Taxa da Central em centavos |
+| `pricing.service_price` | integer | Preço com taxa Central incluída, em centavos |
+| `pricing.subtotal_amount` | integer | Subtotal (service_price + despesas motorista) em centavos |
+| `pricing.service_fee_value` | integer | Taxa de serviço CGD em centavos |
+| `pricing.margin_value` | integer | Margem do parceiro em centavos |
+| `pricing.total_amount` | integer | Total final em centavos |
+| `items` | array | Itens do pedido (um por trecho da viagem) |
 
 ---
 
 ## Fluxo de status do pedido
 
 ```
-pending_invoice → invoiced → confirmed → in_progress → completed
-                                    ↘
-                                   cancelled (qualquer etapa)
+A Faturar → Faturado → Confirmado (Pago) → Em Execução → Concluído
+                                       ↘
+                                      Cancelado (qualquer etapa)
 ```
 
-| Status | Descricao |
+| Status | Descrição |
 |--------|-----------|
-| `pending_invoice` | Pedido criado, aguardando faturamento |
-| `invoiced` | Fatura emitida |
-| `confirmed` | Pagamento confirmado |
-| `in_progress` | Servico em execucao |
-| `completed` | Servico concluido com sucesso |
-| `cancelled` | Pedido cancelado |
+| `A Faturar` | Pedido criado, aguardando faturamento |
+| `Faturado` | Fatura emitida |
+| `Confirmado (Pago)` | Pagamento confirmado |
+| `Em Execução` | Serviço em execução |
+| `Concluído` | Serviço concluído com sucesso |
+| `Cancelado` | Pedido cancelado |
 
-As mudancas de status sao notificadas via webhook (`order.status_changed`). Veja [Webhooks](/partner/webhooks).
+As mudanças de status são notificadas via webhook (`order.status_changed`). Veja [Webhooks](/partner/webhooks).
 
 ---
 
 ## Listar pedidos
 
 ```bash
-curl -X GET "https://gds.fretatech.com.br/api/partner/v1/orders?status=confirmed&date_from=2026-04-01" \
-  -H "Authorization: Bearer SEU_TOKEN"
+curl -X GET "https://gds.fretatech.com.br/api/partner/v1/orders?status=Confirmado&customer_id=5&date_from=2026-04-01" \
+  -H "Authorization: Bearer SUA_API_KEY"
 ```
 
-### Parametros de filtro
+### Parâmetros de filtro
 
-| Parametro | Tipo | Descricao |
+| Parâmetro | Tipo | Descrição |
 |-----------|------|-----------|
 | `status` | string | Filtra por status do pedido |
-| `customer_id` | string | Filtra por cliente |
-| `date_from` | string | Data inicial de criacao (`YYYY-MM-DD`) |
-| `date_to` | string | Data final de criacao (`YYYY-MM-DD`) |
-| `trip_date_from` | string | Data inicial da viagem (`YYYY-MM-DD`) |
-| `trip_date_to` | string | Data final da viagem (`YYYY-MM-DD`) |
-| `page` | integer | Numero da pagina |
-| `per_page` | integer | Itens por pagina (maximo: 100) |
-
-### Resposta
-
-```json
-{
-  "data": [
-    {
-      "id": "ord_01jk2m3n4p5q6r7s",
-      "status": "confirmed",
-      "trip_date": "2026/04/15",
-      "origin": "Aeroporto de Guarulhos, Guarulhos - SP",
-      "destination": "Av. Paulista, 1000, São Paulo - SP",
-      "total_cents": 207000,
-      "customer": {
-        "id": "01jk2m3n4p5q6r7s8t9u0vwxyz",
-        "name": "Empresa Exemplo Ltda"
-      },
-      "created_at": "2026-03-06T14:30:00.000000Z"
-    }
-  ],
-  "meta": {
-    "current_page": 1,
-    "per_page": 15,
-    "total": 27
-  }
-}
-```
+| `customer_id` | integer | Filtra por cliente |
+| `date_from` | string | Data inicial de criação (`YYYY-MM-DD`) |
+| `date_to` | string | Data final de criação (`YYYY-MM-DD`) |
 
 ---
 
 ## Buscar pedido por ID
 
 ```bash
-curl -X GET https://gds.fretatech.com.br/api/partner/v1/orders/ord_01jk2m3n4p5q6r7s \
-  -H "Authorization: Bearer SEU_TOKEN"
+curl -X GET https://gds.fretatech.com.br/api/partner/v1/orders/120 \
+  -H "Authorization: Bearer SUA_API_KEY"
 ```
 
-Retorna o objeto completo do pedido, incluindo o array `items` com os servicos vinculados. Use os IDs dos itens para consultar dados operacionais via endpoint de [Servicos](/partner/services).
+Retorna o objeto completo do pedido, incluindo o array `items` com os serviços vinculados. Use os IDs dos itens para consultar dados operacionais via endpoint de [Serviços](/partner/services).

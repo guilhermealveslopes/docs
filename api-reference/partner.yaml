@@ -1,8 +1,8 @@
 openapi: 3.0.4
 info:
-  title: GDS
+  title: CGD
   description: |-
-    API REST para integração de parceiros com o GDS (Global Distribution System) da Fretatech.
+    API REST para integração de parceiros com o CGD (Global Distribution System) da Fretatech.
 
     Permite que sistemas externos gerenciem clientes, realizem buscas de disponibilidade, criem orçamentos e pedidos, acompanhem serviços operacionais e configurem webhooks.
 
@@ -29,7 +29,7 @@ servers:
     variables:
       subdomain:
         default: gds
-        description: Subdomínio do parceiro no sistema GDS
+        description: Subdomínio do parceiro no sistema CGD
 
 tags:
   - name: Autenticação
@@ -1445,7 +1445,7 @@ paths:
         lista de passageiros, placa do veículo e número ANTT.
 
         Estas informações são preenchidas pela empresa de fretamento (tenant) à medida
-        que a operação avança, e chegam ao GDS via webhook.
+        que a operação avança, e chegam ao CGD via webhook.
       operationId: servicesOperational
       parameters:
         - name: id
@@ -2060,9 +2060,9 @@ paths:
       description: |-
         Registra um novo endpoint de webhook para receber notificações de eventos.
 
-        O GDS enviará um `POST` para a URL configurada com o payload do evento em formato JSON.
+        O CGD enviará um `POST` para a URL configurada com o payload do evento em formato JSON.
         Recomenda-se que o endpoint retorne HTTP 200 em até **5 segundos**; caso contrário,
-        o GDS tentará reenviar o evento automaticamente.
+        o CGD tentará reenviar o evento automaticamente.
       operationId: webhooksStore
       requestBody:
         required: true
@@ -2663,7 +2663,7 @@ components:
           type: string
           format: uuid
           example: "b9c8d7e6-f5a4-3210-9876-543210fedcba"
-          description: Identificador único global para rastreamento cross-system (GDS / Central / Tenant)
+          description: Identificador único global para rastreamento cross-system (CGD / Central / Tenant)
         vehicle_name:
           type: string
           example: "Mercedes-Benz O-500 Executivo"

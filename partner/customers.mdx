@@ -3,7 +3,7 @@ title: "Clientes"
 description: "Gerenciamento completo de clientes (TMCs e empresas)"
 ---
 
-O endpoint de clientes permite criar, consultar e atualizar cadastros de pessoas físicas (PF) e jurídicas (PJ) no GDS. Ao criar um cliente, o GDS retorna automaticamente um `integration_code` — use esse código para referenciar o cliente em chamadas futuras (orçamentos, pedidos etc.).
+O endpoint de clientes permite criar, consultar e atualizar cadastros de pessoas físicas (PF) e jurídicas (PJ) no CGD. Ao criar um cliente, o CGD retorna automaticamente um `integration_code` — use esse código para referenciar o cliente em chamadas futuras (orçamentos, pedidos etc.).
 
 ## Endpoints
 
@@ -82,7 +82,7 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/customers \
 | `name` | string | Sim | Nome completo (PF) ou razão social (PJ) |
 | `type` | string | Sim | `individual` para PF, `company` para PJ |
 | `cnpj_cpf` | string | Não | CPF (PF, 11 dígitos) ou CNPJ (PJ, 14 dígitos), apenas dígitos |
-| `email` | string | Não | E-mail de contato (único por GDS) |
+| `email` | string | Não | E-mail de contato (único por CGD) |
 | `tel` | string | Não | Telefone principal com DDD |
 | `last_name` | string | Não | Sobrenome (PF) |
 | `trade_name` | string | PJ obrigatório | Nome fantasia da empresa |
@@ -116,7 +116,7 @@ curl -X POST https://gds.fretatech.com.br/api/partner/v1/customers \
 ```
 
 <Note>
-  O campo `integration_code` é gerado automaticamente pelo GDS no momento da criação e corresponde ao ID interno do cliente. Salve esse valor no seu sistema para referenciar este cliente em orçamentos, pedidos e consultas futuras.
+  O campo `integration_code` é gerado automaticamente pelo CGD no momento da criação e corresponde ao ID interno do cliente. Salve esse valor no seu sistema para referenciar este cliente em orçamentos, pedidos e consultas futuras.
 </Note>
 
 ---
@@ -166,7 +166,7 @@ curl -X GET "https://gds.fretatech.com.br/api/partner/v1/customers?integration_c
 
 ## O campo integration_code
 
-O `integration_code` é atribuído **automaticamente** pelo GDS no momento da criação do cliente. Seu valor é o ID interno do cliente no GDS.
+O `integration_code` é atribuído **automaticamente** pelo CGD no momento da criação do cliente. Seu valor é o ID interno do cliente no CGD.
 
 **Fluxo recomendado:**
 
