@@ -11,6 +11,17 @@
     "navigation": {
         "tabs": [
             {
+                "tab": "Documentação",
+                "groups":[
+                    {
+                        "group": "Configurações",
+                        "pages": [
+                            "documentacao/configuracoes/configurar-emails"
+                        ]
+                    }
+                ]
+            },
+            {
                 "tab": "Oportunidades",
                 "groups": [
                     {
