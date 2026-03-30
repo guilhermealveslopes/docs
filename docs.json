@@ -16,7 +16,12 @@
                     {
                         "group": "Configurações",
                         "pages": [
-                            "documentacao/configuracoes/configurar-emails"
+                            {
+                                "group": "Motor de Reservas",
+                                "pages": [
+                                    "documentacao/configuracoes/configurar-emails"
+                                ]
+                            }
                         ]
                     }
                 ]
