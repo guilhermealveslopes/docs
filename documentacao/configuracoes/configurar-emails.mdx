@@ -2,3 +2,105 @@
 title: "Configurar emails"
 description: "Detalhes da configuração da conta de E-mail (SMTP)."
 ---
+
+A página de **Configurações de Emails** permite configurar a conta de e-mail SMTP utilizada pelo sistema para envio de notificações, como confirmações de pedidos e orçamentos.
+
+Para acessar, navegue até **Motor de Reservas → Configurar emails** no menu lateral.
+
+<Frame>
+  <img src="/images/configurar-emails/pagina.png" alt="Página de configuração de emails" />
+</Frame>
+
+---
+
+## Dados da conta SMTP
+
+### Host
+
+Endereço do servidor SMTP responsável pelo envio dos e-mails (ex: `smtp-relay.gmail.com`, `smtp.office365.com`).
+
+<Frame>
+  <img src="/images/configurar-emails/host.png" alt="Campo Host" />
+</Frame>
+
+### Usuário
+
+E-mail ou usuário utilizado para autenticação no servidor SMTP.
+
+<Frame>
+  <img src="/images/configurar-emails/usuario.png" alt="Campo Usuário" />
+</Frame>
+
+### Porta
+
+Porta do serviço de e-mail. As portas mais comuns são `25`, `465` (SSL) e `587` (TLS).
+
+<Frame>
+  <img src="/images/configurar-emails/porta.png" alt="Campo Porta" />
+</Frame>
+
+### Protocolo
+
+Protocolo de segurança utilizado na conexão com o servidor SMTP. As opções disponíveis são `SSL` e `TLS`.
+
+<Frame>
+  <img src="/images/configurar-emails/protocolo.png" alt="Campo Protocolo" />
+</Frame>
+
+### Host Alternativo - peer name
+
+Campo opcional. Host alternativo para verificação do certificado SSL. Utilize quando o nome do certificado do servidor for diferente do host principal.
+
+<Frame>
+  <img src="/images/configurar-emails/host-alternativo.png" alt="Campo Host Alternativo" />
+</Frame>
+
+---
+
+## Autenticação
+
+### Autenticação sem senha
+
+Quando ativado, o sistema não exige senha para autenticação no servidor SMTP. Útil para servidores que utilizam autenticação por IP ou relay confiável.
+
+<Frame>
+  <img src="/images/configurar-emails/autenticacao-sem-senha.png" alt="Toggle autenticação sem senha" />
+</Frame>
+
+### Autenticação com senha
+
+Senha usada para autenticação no servidor SMTP.
+
+<Frame>
+  <img src="/images/configurar-emails/senha.png" alt="Campo Senha" />
+</Frame>
+
+<Note>
+  Se o seu servidor SMTP exige autenticação com senha, desative o toggle **"Sem senha?"** para exibir o campo de senha.
+</Note>
+
+---
+
+## Opções de envio
+
+### Desativar envio de e-mail para novos pedidos
+
+Quando ativado, o sistema não envia e-mails automáticos ao criar novos pedidos.
+
+### Desativar envio de e-mail para novos orçamentos
+
+Quando ativado, o sistema não envia e-mails automáticos ao criar novos orçamentos.
+
+<Frame>
+  <img src="/images/configurar-emails/desativar-pedidos.png" alt="Toggles de desativar envio de e-mails" />
+</Frame>
+
+<Warning>
+  Ao desativar os e-mails de novos pedidos ou orçamentos, os clientes não receberão notificações automáticas dessas ações por e-mail.
+</Warning>
+
+---
+
+## Como salvar
+
+Após preencher todos os campos, clique no botão **Salvar alterações** no canto superior direito da página. Para retornar sem salvar, clique em **Voltar**.
