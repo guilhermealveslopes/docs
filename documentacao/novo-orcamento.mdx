@@ -1,0 +1,213 @@
+---
+title: "Novo orçamento"
+description: "Detalhes da criação de um novo orçamento."
+---
+
+O fluxo de criação de orçamento permite pesquisar veículos disponíveis para uma viagem e gerar um orçamento ou fechar uma reserva diretamente.
+
+Para acessar, clique em **Novo orçamento** no menu lateral.
+
+---
+
+## Passo 1 — Definir o cliente
+
+Ao acessar a tela de criação de orçamento, o primeiro passo é selecionar o cliente. Digite o nome, e-mail ou CPF no campo de busca.
+
+<Frame>
+  <img src="/images/novo-orcamento/01-tela-inicial.png" alt="Tela inicial - busca de cliente" />
+</Frame>
+
+<br/>
+
+Os resultados aparecerão abaixo do campo de busca. Clique em **Aplicar** para selecionar o cliente desejado.
+
+<Frame>
+  <img src="/images/novo-orcamento/02-busca-cliente.png" alt="Resultado da busca de cliente" />
+</Frame>
+
+<Tip>
+  Caso o cliente não esteja cadastrado, clique em **Cadastrar novo cliente** no canto superior direito.
+</Tip>
+
+---
+
+## Passo 2 — Configurar a viagem
+
+Após selecionar o cliente, o formulário de viagem é exibido. Escolha o tipo de viagem e preencha os dados do roteiro.
+
+<Frame>
+  <img src="/images/novo-orcamento/03-formulario-viagem.png" alt="Formulário de viagem" />
+</Frame>
+
+### Tipo de viagem
+
+Existem quatro opções de tipo de viagem:
+
+- **Ida e volta** — viagem com retorno ao ponto de origem
+- **Somente ida** — viagem apenas de ida, sem retorno
+- **Por hora** — contratação do veículo por período de horas
+- **Roteiro personalizado** — viagem com origem, destino e pontos de parada intermediários. Ideal para roteiros turísticos ou viagens com múltiplas cidades. Ao selecionar essa opção, é possível adicionar quantos pontos de parada forem necessários entre a origem e o destino.
+
+### Campos do formulário
+
+Independente do tipo de viagem escolhido, todos os campos do formulário exibido são obrigatórios.
+
+<p style={{fontSize: '1.1rem'}}><strong>Ida e volta</strong></p>
+
+<Frame>
+  <img src="/images/novo-orcamento/04-origem-autocomplete.png" alt="Autocomplete de origem" />
+</Frame>
+
+<p style={{fontSize: '1.1rem'}}><strong>Somente ida</strong></p>
+
+<Frame>
+  
+</Frame>
+
+<p style={{fontSize: '1.1rem'}}><strong>Por hora</strong></p>
+
+<Frame>
+  
+</Frame>
+
+<p style={{fontSize: '1.1rem'}}><strong>Roteiro personalizado</strong></p>
+
+<Frame>
+  
+</Frame>
+
+
+
+
+<br/>
+
+<p style={{fontSize: '1.1rem'}}><strong>Destino</strong></p>
+Cidade de destino da viagem. Funciona da mesma forma que o campo de origem, com autocomplete.
+
+<br/>
+
+<p style={{fontSize: '1.1rem'}}><strong>Data ida / Data volta</strong></p>
+Datas de ida e volta da viagem. Selecione as datas no calendário.
+
+<br/>
+
+<p style={{fontSize: '1.1rem'}}><strong>Hora ida / Hora volta</strong></p>
+Horários de ida e volta. Selecione o horário desejado no dropdown (intervalos de 30 minutos).
+
+<br/>
+
+Após preencher todos os campos, o formulário ficará assim:
+
+<Frame>
+  <img src="/images/novo-orcamento/05-formulario-preenchido.png" alt="Formulário preenchido" />
+</Frame>
+
+Clique em **Fazer pesquisa** para buscar os veículos disponíveis.
+
+---
+
+## Passo 3 — Resultados da pesquisa
+
+A tela de resultados exibe os veículos disponíveis para o trecho e datas selecionados.
+
+<Frame>
+  <img src="/images/novo-orcamento/06-resultado-pesquisa.png" alt="Resultados da pesquisa de veículos" />
+</Frame>
+
+Para cada veículo, são exibidos:
+- **Nome e categoria** do veículo
+- **Adicionais** disponíveis (opcionais como água, ar-condicionado)
+- **Disponibilidade** (quantidade de lugares)
+- **Valor** do serviço
+- **Ações** — calcular pedágio, ver detalhes e adicionar ao orçamento
+
+### Adicionar veículo
+
+No dropdown **Adicionar**, selecione a quantidade de veículos desejada (ex: 1 veículo).
+
+Após adicionar, um modal pergunta se deseja contratar as **despesas de hospedagem e alimentação do motorista**:
+
+<Frame>
+  <img src="/images/novo-orcamento/07-despesas-motorista.png" alt="Modal de despesas do motorista" />
+</Frame>
+
+- **Sim** — inclui as despesas no valor total
+- **Não** — não inclui despesas adicionais
+
+Em seguida, um modal de **Opcionais** é exibido, permitindo adicionar itens extras ao serviço:
+
+<Frame>
+  <img src="/images/novo-orcamento/swal-1.png" alt="Modal de opcionais" />
+</Frame>
+
+Após selecionar os opcionais desejados, clique em **Adicionar** para continuar. Depois, clique em **Avançar** na barra inferior para ir à tela de definição de pagamento.
+
+---
+
+## Passo 4 — Definir pagamento
+
+Nesta tela você define as informações do cliente, parcelas e finaliza o orçamento.
+
+<Frame>
+  <img src="/images/novo-orcamento/09-tela-pagamento.png" alt="Tela de definição de pagamento" />
+</Frame>
+
+### Informações do cliente
+
+Os dados do cliente (Nome, E-mail, Telefone, CPF) são preenchidos automaticamente. Você pode editá-los se necessário.
+
+### Acréscimo / Desconto
+
+Clique em **Adicionar Acréscimo/Desconto** para aplicar valores adicionais ou descontos sobre o total do orçamento.
+
+### Definir parcelas
+
+Selecione o número de parcelas no dropdown. Ao selecionar, os campos de cada parcela são exibidos:
+
+<Frame>
+  <img src="/images/novo-orcamento/11-parcelas.png" alt="Campos de parcelas" />
+</Frame>
+
+Para cada parcela, preencha:
+- **Data de vencimento** — data em que a parcela vence
+- **Valor** — valor da parcela
+
+O sistema exibe o **Total das parcelas** e o **Restante** (diferença entre o total do orçamento e a soma das parcelas).
+
+---
+
+## Passo 5 — Finalizar
+
+Na barra inferior da tela, existem duas ações possíveis:
+
+### Gerar orçamento
+
+Clique em **Gerar orçamento** para salvar apenas como orçamento, sem gerar cobrança. O orçamento pode ser convertido em pedido posteriormente.
+
+<Frame>
+  <img src="/images/novo-orcamento/16-gerar-orcamento-modal.png" alt="Modal de orçamento gerado com sucesso" />
+</Frame>
+
+Após gerar, você pode:
+- **Ir para o orçamento** — ver os detalhes do orçamento criado
+- **Enviar para o Whatsapp** — enviar o orçamento diretamente ao cliente
+
+<Note>
+  O botão **Gerar orçamento** não exige que as parcelas estejam preenchidas. As parcelas podem ser definidas posteriormente ao converter o orçamento em pedido.
+</Note>
+
+### Fechar reserva
+
+Clique em **Fechar reserva** para criar um pedido diretamente com cobrança. Este fluxo exige que as parcelas estejam preenchidas com data e valor.
+
+<Frame>
+  <img src="/images/novo-orcamento/15-swal-fechar.png" alt="Modal de pedido criado com sucesso" />
+</Frame>
+
+Após criar o pedido, você pode:
+- **Ver pedido** — ver os detalhes do pedido criado
+- **Perfil do cliente** — acessar o perfil do cliente
+
+<Warning>
+  Ao clicar em **Fechar reserva**, o pedido é criado imediatamente com as cobranças geradas. Certifique-se de que todos os dados estão corretos antes de confirmar.
+</Warning>

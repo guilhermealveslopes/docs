@@ -14,6 +14,12 @@
                 "tab": "Documentação",
                 "groups":[
                     {
+                        "group": "Início",
+                        "pages": [
+                            "documentacao/novo-orcamento"
+                        ]
+                    },
+                    {
                         "group": "Configurações",
                         "pages": [
                             {
