@@ -20,12 +20,29 @@
                         ]
                     },
                     {
+                        "group": "Gestão",
+                        "pages": [
+                            {
+                                "group": "Comercial",
+                                "pages" : [
+                                    "documentacao/gestao/comercial/servicos"
+                                ]
+                            },
+                            {
+                                "group": "Motoristas",
+                                "pages" : [
+                                    "documentacao/gestao/motoristas/recibos"
+                                ]
+                            }
+                        ]
+                    },
+                    {
                         "group": "Configurações",
                         "pages": [
                             {
                                 "group": "Motor de Reservas",
                                 "pages": [
-                                    "documentacao/configuracoes/configurar-emails"
+                                    "documentacao/configuracoes/motor-de-reservas/configurar-emails"
                                 ]
                             }
                         ]
