@@ -25,7 +25,10 @@
                             {
                                 "group": "Comercial",
                                 "pages" : [
-                                    "documentacao/gestao/comercial/servicos"
+                                    "documentacao/gestao/comercial/servicos",
+                                    "documentacao/gestao/comercial/servico-detalhes",
+                                    "documentacao/gestao/comercial/pedidos",
+                                    "documentacao/gestao/comercial/pedido-detalhes"
                                 ]
                             },
                             {
