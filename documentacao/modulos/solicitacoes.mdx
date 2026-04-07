@@ -1,0 +1,56 @@
+---
+title: "Solicitações"
+description: "Lista de solicitações de autorização ANTT"
+---
+
+A página de **Autorizações ANTT** exibe todas as solicitações de autorização realizadas. Para acessar, navegue até **Módulos > ANTT > Autorizações** no menu lateral.
+
+<Frame>
+  <img src="/images/antt/autorizacoes.png" alt="Lista de autorizações ANTT" />
+</Frame>
+
+<Tip>
+  O botão **Configurações** no canto da página leva diretamente para a [parametrização do módulo](/documentacao/modulos/parametrizacao).
+</Tip>
+
+---
+
+## Filtros
+
+No topo da página, é possível filtrar as solicitações por:
+
+- **Status** — filtra pelo status da autorização (Pendente, Concluída, Cancelada, etc.)
+- **ID da Autorização** — busca pelo identificador da autorização
+- **ID do Serviço** — busca pelo número do serviço vinculado
+- **Placa** — busca pela placa do veículo
+
+Após preencher os filtros desejados, clique em **Filtrar** para aplicar. Para limpar os filtros, clique em **Limpar filtros**.
+
+---
+
+## Colunas da listagem
+
+| Coluna | Descrição |
+|---|---|
+| **Serviço** | Número do serviço vinculado à autorização |
+| **Cliente** | Nome do cliente |
+| **Placa** | Placa do veículo |
+| **ID Autorização** | Identificador da autorização na ANTT |
+| **Etapa** | Etapa atual da solicitação (ex: Simples conferência, Impressão definitiva, Cancelamento) |
+| **Status** | Status da autorização |
+| **Atualizado em** | Data e hora da última atualização |
+| **Ações** | Menu de ações disponíveis para a solicitação |
+
+---
+
+## Status
+
+Cada solicitação possui um dos seguintes status:
+
+- <span style={{color: '#28c76f'}}>**Concluída**</span> — autorização finalizada com sucesso
+- <span style={{color: '#ea5455'}}>**Cancelada**</span> — autorização cancelada
+- <span style={{color: '#ff9f43'}}>**Pendente**</span> — autorização aguardando processamento
+
+<Note>
+Solicitações que foram alteradas diretamente no portal da ANTT, podem exibir a tag `Manual` ao lado do status.
+</Note>
