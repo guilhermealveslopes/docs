@@ -1,0 +1,83 @@
+---
+title: "Emissão"
+description: "Como emitir uma autorização ANTT"
+---
+
+Para emitir uma autorização ANTT, é necessário que o serviço tenha as seguintes informações preenchidas na [página de detalhes do serviço](/documentacao/gestao/comercial/servico-detalhes):
+
+1. **Veículo e motorista escalados** — na aba [Veículo/Motorista](/documentacao/gestao/comercial/servico-detalhes#veículomotorista)
+2. **Lista de passageiros** — na aba [Passageiros](/documentacao/gestao/comercial/servico-detalhes#passageiros)
+
+<Warning>
+  A emissão não será possível enquanto o veículo, o motorista e a lista de passageiros não estiverem preenchidos.
+</Warning>
+
+---
+
+## Acessando a autorização
+
+Na página de detalhes do serviço, clique em **Mais** e selecione **Autorização ANTT**.
+
+<Frame>
+  <img src="/images/antt/servico-antt-pendente.png" alt="Aba Autorização ANTT na página de detalhes do serviço" />
+</Frame>
+
+A página exibe **Status da autorização** e as etapas do processo de emissão.
+
+---
+
+## Etapas da emissão
+
+A emissão segue uma sequência de 4 etapas. Cada etapa só pode ser executada após a anterior ser concluída.
+
+### 1. Roteiro da viagem
+
+Clique em **Enviar** para registrar as informações do roteiro na ANTT. Ao concluir, o sistema cria a solicitação e exibe o **Número da Solicitação**.
+
+<Frame>
+  <img src="/images/antt/servico-antt-roteiro.png" alt="Roteiro da viagem enviado" />
+</Frame>
+
+<Tip>
+  Após o envio, o botão muda para **Atualizar**, permitindo reenviar os dados caso o roteiro seja alterado.
+</Tip>
+
+### 2. Lista de Passageiros
+
+Com o roteiro enviado, clique em **Enviar** para cadastrar a lista de passageiros na ANTT. A mensagem exibirá a quantidade de passageiros cadastrados.
+
+<Frame>
+  <img src="/images/antt/servico-antt-passageiros.png" alt="Lista de passageiros enviada" />
+</Frame>
+
+<Tip>
+  Assim como o roteiro, é possível clicar em **Atualizar** para reenviar a lista caso haja alterações nos passageiros.
+</Tip>
+
+### 3. Impressão para simples conferência
+
+Após o envio da lista de passageiros, a impressão de simples conferência é gerada automaticamente. Clique em **Visualizar** para baixar o PDF de conferência.
+
+### 4. Impressão definitiva
+
+Clique em **Solicitar** para gerar a impressão definitiva da autorização. Quando disponível, clique em **Visualizar** para baixar o PDF final.
+
+<Frame>
+  <img src="/images/antt/servico-antt-definitiva.png" alt="Autorização concluída com todas as etapas finalizadas" />
+</Frame>
+
+<Warning>
+  Após a impressão definitiva ser gerada, a autorização é considerada **Concluída** e nenhuma alteração pode ser feita.
+</Warning>
+
+---
+
+## Nota fiscal
+
+Os campos **Nº Nota Fiscal** e **Nº Série da NF** estão sempre disponíveis na página, permitindo vincular a nota fiscal à autorização.
+
+---
+
+## Cancelamento
+
+É possível cancelar a autorização clicando em **Cancelar autorização** no canto superior direito da página. O cancelamento está disponível após a solicitação ser criada e antes da impressão definitiva ser gerada.
