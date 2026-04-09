@@ -40,6 +40,19 @@
                         ]
                     },
                     {
+                        "group": "Módulos",
+                        "pages": [
+                            {
+                                "group": "ANTT",
+                                "pages": [
+                                    "documentacao/modulos/solicitacoes",
+                                    "documentacao/modulos/emissao",
+                                    "documentacao/modulos/parametrizacao"
+                                ]
+                            }
+                        ]
+                    },
+                    {
                         "group": "Configurações",
                         "pages": [
                             {
