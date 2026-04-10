@@ -1,7 +1,251 @@
 ---
-title: "Pedido"
-sidebarTitle: "Pedido - detalhes"
-description: "Detalhes do pedido."
+title: "Detalhes do Pedido"
+sidebarTitle: "Pedidos - detalhes"
+description: "Detalhes do pedido, informações do cliente, serviços, cobranças e ações disponíveis."
 ---
 
-# ⚠️ Documentação em desenvolvimento
+# Detalhes do pedido
+
+Nesta página você encontra os detalhes completos de um pedido e pode realizar diversas ações, como editar cobranças, cancelar o pedido, gerar contratos, emitir documentos fiscais, entre outras. Cada funcionalidade será detalhada a seguir.
+
+A página é dividida em duas áreas: o **conteúdo principal** (à esquerda), com informações do cliente, serviços, pagamento e cobranças; e o **painel lateral** (à direita), com status, ações rápidas, contrato e logs.
+
+<Frame>
+  <img src="/images/pedido-detalhes/detalhes-pedido.webp" alt="Página de detalhes do pedido" />
+</Frame>
+
+---
+
+## Informações do Cliente
+
+O card **"Informações do Cliente"** exibe os dados do cliente vinculado ao pedido:
+
+- **Nome** — com link para o perfil do cliente
+- **E-mail**
+- **CPF/CNPJ** — documento do cliente
+- **Telefone** — com botão para chamar no WhatsApp (quando configurado)
+
+<Frame>
+  <img src="/images/pedido-detalhes/info-cliente.webp" alt="Card de informações do cliente" />
+</Frame>
+
+---
+
+## Serviços do Pedido
+
+O card **"Serviços do Pedido"** lista todos os serviços vinculados ao pedido, exibindo:
+
+- **ID** — identificador do serviço (clicável, redireciona para os detalhes do serviço)
+- **Tipo** — tipo da viagem
+- **Veículo** — veículo designado
+- **Subtotal (R$)** — valor antes de descontos/acréscimos
+- **Total (R$)** — valor final do serviço
+
+<Frame>
+  <img src="/images/pedido-detalhes/servicos-pedido.webp" alt="Card de serviços do pedido" />
+</Frame>
+
+Para mais informações sobre cada serviço, acesse [Detalhes do Serviço](/documentacao/gestao/comercial/servico-detalhes).
+
+---
+
+## Informações de Pagamento
+
+O card **"Informações de Pagamento"** apresenta o resumo financeiro do pedido:
+
+- **Forma de pagamento**
+- **Valor do Serviço**
+- **Cobranças extras** (quando existentes)
+- **Opcionais dos Veículos** (quando existentes)
+- **Subtotal**
+- **Valor total**
+
+<Frame>
+  <img src="/images/pedido-detalhes/info-pagamento.webp" alt="Card de informações de pagamento" />
+</Frame>
+
+<Note>
+  Quando o pedido possui impostos retidos, um card adicional **"Impostos retidos"** é exibido, detalhando os valores de ISS e demais deduções, além do **Valor líquido** final.
+</Note>
+
+---
+
+## Cobranças
+
+O card **"Cobranças"** exibe todas as cobranças do pedido com as seguintes informações:
+
+- **ID** — identificador da cobrança
+- **Vencimento** — data de vencimento
+- **Status** — situação atual (badge colorido)
+- **Valor** — valor da cobrança
+- **Parcelas** — número de parcelas
+- **Download** — botão para baixar o boleto (quando disponível)
+
+No rodapé do card são exibidos os totais: **Total Pendente** e **Total Pago**.
+
+<Frame>
+  <img src="/images/pedido-detalhes/cobrancas.webp" alt="Card de cobranças do pedido" />
+</Frame>
+
+### Ações nas cobranças
+
+No canto superior direito do card de cobranças, um dropdown oferece as seguintes ações:
+
+<Frame>
+  <img src="/images/pedido-detalhes/dropdown-cobrancas.webp" alt="Dropdown de ações nas cobranças" />
+</Frame>
+
+- **Editar cobranças** — abre o painel lateral para alterar parcelas e vencimentos
+- **Criar cobrança extra** — abre o modal para adicionar uma cobrança extra ao pedido
+- **Motivos de cobrança** — acessa a página de gerenciamento de motivos
+- **Sincronizar** — atualiza o status das cobranças com o gateway de pagamento
+
+<Note>
+  Quando uma integração ERP está configurada, a opção **"Enviar para o ERP"** também é exibida no dropdown.
+</Note>
+
+### Criar cobrança extra
+
+Ao selecionar **"Criar cobrança extra"**, o seguinte modal é exibido:
+
+<Frame>
+  <img src="/images/pedido-detalhes/modal-cobranca-extra.gif" alt="Modal de cobrança extra" />
+</Frame>
+
+Preencha os campos:
+- **Motivo** — selecione o motivo da cobrança
+- **Valor** — valor da cobrança extra
+- **Vencimento** — data de vencimento
+- **Observação** — detalhes sobre a cobrança
+
+### Editar cobranças
+
+Ao selecionar **"Editar cobranças"**, um painel lateral é aberto onde é possível definir o número de parcelas e ajustar as datas de vencimento e valores de cada parcela:
+
+<Frame>
+  <img src="/images/pedido-detalhes/editar-cobrancas.gif" alt="Painel de editar cobranças" />
+</Frame>
+
+---
+
+## Conferência Financeira
+
+<Note>
+  Este card só é exibido quando a funcionalidade de conferência financeira está habilitada nas configurações do sistema.
+</Note>
+
+O card **"Conferência Financeira"** exibe o status da conferência e as observações registradas. Para alterar, clique em **"Alterar"**:
+
+<Frame>
+  <img src="/images/pedido-detalhes/conferencia-financeira.webp" alt="Card de conferência financeira" />
+</Frame>
+
+O modal de edição permite definir o status da conferência e adicionar observações:
+
+<Frame>
+  <img src="/images/pedido-detalhes/modal-conferencia.gif" alt="Modal de conferência financeira" />
+</Frame>
+
+---
+
+## Painel lateral
+
+O painel lateral (à direita) concentra informações de status e ações rápidas.
+
+### Responsável
+
+Exibe o atendente responsável pelo pedido. Caso nenhum usuário esteja atribuído, o botão **"Assumir atendimento"** permite que você se torne o responsável. Para alterar o responsável, clique em **"Alterar"**.
+
+<Frame>
+  <img src="/images/pedido-detalhes/responsavel.gif" alt="Card de responsável" />
+</Frame>
+
+### Status
+
+Exibe a situação atual do pedido como badge colorido. Quando o pedido está cancelado, o **motivo de cancelamento** também é exibido.
+
+<Frame>
+  <img src="/images/pedido-detalhes/status.webp" alt="Card de status" />
+</Frame>
+
+### Datas
+
+Exibe a **Data de Criação** e a **Data da última atualização** do pedido.
+
+### Origem
+
+Indica de onde o pedido foi criado: *Painel*, *Online* ou *Não definida*.
+
+---
+
+## Ações da reserva
+
+O card **"Ações da reserva"** oferece os seguintes botões (quando as condições de permissão e estado do pedido são atendidas):
+
+<Frame>
+  <img src="/images/pedido-detalhes/acoes-reserva.webp" alt="Card de ações da reserva" />
+</Frame>
+
+- **Cancelar reserva** — cancela o pedido
+- **Editar pedido** — redireciona para a página de edição do pedido
+- **Enviar para o Whatsapp** — abre a conversa com o cliente no WhatsApp
+
+---
+
+## Contrato
+
+O card **"Contrato"** permite gerar e gerenciar o contrato do pedido:
+
+<Frame>
+  <img src="/images/pedido-detalhes/contrato.webp" alt="Card de contrato" />
+</Frame>
+
+- **Gerar Contrato** — gera o PDF do contrato para download
+- **Enviar código de aceite via WhatsApp** — envia o código de aceite dos termos ao cliente
+- **Aceite dos termos** — exibe o status de aceite dos termos pelo cliente
+
+Quando o cliente já aceitou os termos, a data de aceite é exibida.
+
+---
+
+## Emissão de documentos fiscais
+
+<Note>
+  Este card só é exibido quando o módulo fiscal está ativo.
+</Note>
+
+O card **"Emissão de documentos fiscais"** permite emitir e acompanhar os documentos fiscais do pedido:
+
+<Frame>
+  <img src="/images/pedido-detalhes/documentos-fiscais.webp" alt="Card de documentos fiscais" />
+</Frame>
+
+- **Emitir NFS-e** — emite a Nota Fiscal de Serviço eletrônica
+- **Emitir CT-e OS** — emite o Conhecimento de Transporte eletrônico
+- **Documentos emitidos** — lista os documentos já emitidos com links para visualização
+
+---
+
+## Logs do Pedido
+
+O card **"Logs do Pedido"** exibe o histórico completo de alterações do pedido em formato de timeline, incluindo:
+
+- **Data e hora** da alteração
+- **Tipo** do log (quando aplicável)
+- **Mensagem** descritiva da alteração
+- **Autor** — quem realizou a alteração
+
+<Frame>
+  <img src="/images/pedido-detalhes/logs.webp" alt="Card de logs do pedido" />
+</Frame>
+
+---
+
+## Informações relacionadas
+
+Dependendo do pedido, cards adicionais podem ser exibidos no painel lateral:
+
+- **Fatura do Pedido** — quando o pedido faz parte de uma fatura, exibe o ID e valor com link para a fatura
+- **Pesquisas do pedido** — exibe as pesquisas de preço realizadas antes da criação do pedido
+- **Orçamento do pedido** — exibe o orçamento de origem com link para visualização
+- **Oportunidade Externa** — quando o pedido foi originado de uma oportunidade externa, exibe os dados da origem

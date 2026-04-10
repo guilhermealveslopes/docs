@@ -4,4 +4,126 @@ sidebarTitle: "Pedidos - listagem"
 description: "Detalhes da listagem, visualização e gerenciamento de pedidos."
 ---
 
-# ⚠️ Documentação em desenvolvimento
+# Listagem dos pedidos
+
+A página de **Pedidos** reúne todos os pedidos cadastrados no sistema em uma listagem organizada. A partir dela, você pode consultar as informações essenciais de cada pedido, aplicar filtros avançados e acessar os detalhes de forma rápida e prática.
+
+<Frame>
+  <img src="/images/pedidos/lista-pedidos.webp" alt="Listagem de pedidos" />
+</Frame>
+
+## Informações exibidas
+
+A listagem apresenta as seguintes informações de cada pedido:
+
+- **ID** — identificador único do pedido
+- **Cliente** — nome do cliente vinculado
+- **CTR ERP** — código(s) de contrato no ERP externo (quando integrado)
+- **Origem** — de onde o pedido foi criado: *Painel*, *Online* ou *Não definida*
+- **Data do serviço** — data e horário do serviço
+- **Data de criação** — data e horário em que o pedido foi criado
+- **Status** — situação atual do pedido (exibido como badge colorido)
+- **Atendente** — usuário responsável pelo pedido
+- **Valor total** — valor total do pedido
+
+<Note>
+  Dependendo das configurações do sistema, colunas adicionais podem ser exibidas, como **Status de integração ERP**, **Motivo de cancelamento** e **Doc Fiscal / Nota Fiscal**.
+</Note>
+
+## Cards de resumo
+
+No topo da listagem, quatro cards exibem um resumo dos pedidos filtrados:
+
+<Frame>
+  <img src="/images/pedidos/cards-resumo.webp" alt="Cards de resumo dos pedidos" />
+</Frame>
+
+- **Número de pedidos** — total de pedidos na listagem atual
+- **Total** — soma dos valores de todos os pedidos exibidos
+- **Ticket Médio** — valor médio por pedido
+
+<Note>
+  Quando o filtro **"Apenas com desconto?"** está ativo, o card de total exibe o **Total líquido** e um card adicional de **Desconto total aplicado** é exibido.
+</Note>
+
+## Filtros
+
+Para refinar a listagem, clique no botão **"Filtros"** no canto superior direito. Um painel lateral será aberto com diversas opções de filtro:
+
+<Frame>
+  <img src="/images/pedidos/filtros.gif" alt="Painel de filtros dos pedidos" />
+</Frame>
+
+### Toggles
+
+- **Apenas pedidos válidos** — exclui pedidos cancelados
+- **Apenas pedidos com cobranças extras** — filtra pedidos que possuem cobranças adicionais
+- **Apenas com desconto?** — filtra pedidos com desconto aplicado
+- **Com imposto retido?** — filtra pedidos com imposto retido
+
+### Campos de busca
+
+- **ID Orçamento** — busca pelo ID do orçamento de origem
+- **ID do pedido** — busca pelo ID do pedido
+- **CTR Erp** — busca pelo código de contrato externo
+- **Documento (CNPJ/CPF)** — busca pelo documento do cliente
+
+### Intervalos de data
+
+- **Criado em** — filtra por data de criação (De/Até)
+- **Data do serviço** — filtra por data do serviço (De/Até)
+
+### Seleções múltiplas
+
+- **Atendente** — filtra por usuário responsável
+- **Status** — filtra por situação do pedido
+- **Cliente** — filtra por cliente
+- **Origem** — filtra por origem do pedido (*Painel* ou *Online*)
+
+Após configurar os filtros desejados, clique em **"Filtrar"** para aplicar ou **"Limpar filtros"** para remover todos.
+
+## Acessar detalhes do pedido
+
+Para visualizar os detalhes completos de um pedido, clique no **ID do pedido** na primeira coluna da listagem:
+
+<Frame>
+  <img src="/images/pedidos/item-pedidos.webp" alt="Item do pedido na listagem" />
+</Frame>
+
+Você será redirecionado para a página de detalhes do pedido:
+
+<Frame>
+  <img src="/images/pedidos/detalhes-pedido.webp" alt="Página de detalhes do pedido" />
+</Frame>
+
+Para mais informações sobre essa página, acesse [Detalhes do Pedido](/documentacao/gestao/comercial/pedido-detalhes).
+
+## Mais opções
+
+No canto superior direito, ao lado do botão de filtros, clique em **"Mais opções"** (⋮) para acessar ações adicionais:
+
+<Frame>
+  <img src="/images/pedidos/mais-opcoes.webp" alt="Dropdown de mais opções" />
+</Frame>
+
+### Motivos de cancelamento
+
+Selecione **"Motivos de cancelamento"** para acessar a página de gerenciamento dos motivos de cancelamento de pedidos:
+
+<Frame>
+  <img src="/images/pedidos/motivos-cancelamento.webp" alt="Página de motivos de cancelamento" />
+</Frame>
+
+### Exportar comportamentos (.XLSX)
+
+Selecione **"Comportamentos .XLSX"** para exportar uma análise de comportamento de compra em formato Excel. O arquivo será gerado considerando os filtros ativos no momento da exportação.
+
+## Criar novo pedido
+
+Para criar um novo pedido, clique no botão **"Novo pedido"** no canto superior esquerdo da página:
+
+<Frame>
+  <img src="/images/pedidos/botao-novo-pedido.webp" alt="Botão novo pedido" />
+</Frame>
+
+Você será redirecionado para a página de criação de orçamento, onde poderá configurar os detalhes do novo pedido.
